@@ -20,3 +20,11 @@ main {
 .player-cards-suit {
 	padding-right: .5rem;
 }
+
+header {
+	text-align: center;
+}
+
+header .game-id {
+	font-size: 1.1rem;
+}
