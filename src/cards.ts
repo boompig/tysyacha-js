@@ -177,8 +177,11 @@ export class Deck {
         // seed random number generator
         seedrandom(randomSeed.toString(), {global: true});
 
+        console.assert(this.cards.length > 0, 'Cards must not be an empty array');
+
         // shuffle the deck
         this.cards = _.shuffle(this.cards);
+        console.assert(this.cards.length > 0, 'Cards must not be an empty array');
     }
 
     pop(): Card {

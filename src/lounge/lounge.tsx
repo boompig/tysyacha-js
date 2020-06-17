@@ -1,29 +1,10 @@
 import React, {useState, useEffect} from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './lounge.css'
+import {readNameCookie, setNameCookie} from '../name-cookie';
+import { WEBSOCKET_SERVER } from '../constants';
 
-const socket = new WebSocket(`ws://localhost:8081`);
-
-function readCookies(): any {
-    const pairs = document.cookie.split('; ');
-    const cookies : any = {};
-    pairs.forEach((pair: string) => {
-        if(pair.length > 0) {
-            const [k, v] = pair.split('=');
-            cookies[k] = v;
-        }
-    });
-    return cookies;
-}
-
-function readNameCookie(): string | null {
-    const cookies = readCookies();
-    return cookies.name || null;
-}
-
-function setNameCookie(name: string) {
-    document.cookie = `name=${name}`;
-}
+const socket = new WebSocket(WEBSOCKET_SERVER);
 
 interface INameProps {
     onNameSet(name: string): void;
@@ -79,13 +60,13 @@ function CreateGameView(props: ICreateGameProps) {
     }, [props]);
 
     if(props.gameId) {
-        return <div className="create-game-view">
+        return <div className='create-game-view'>
             <p>New game created! Share this code with your friends to play with them.</p>
 
             <form>
-                <input type="text" className="form-control"
+                <input type='text' className='form-control'
                     value={props.gameId} readOnly={true} />
-                <a className="btn btn-lg btn-primary form-control" href={`/game?gameid=${props.gameId}`}>Go To Game</a>
+                <a className='btn btn-lg btn-primary form-control' href={`/game?gameid=${props.gameId}`}>Go To Game</a>
             </form>
         </div>
     } else {
@@ -95,11 +76,19 @@ function CreateGameView(props: ICreateGameProps) {
     }
 }
 
-function JoinGameView() {
-    const [gameId, setGameId] = useState("" as string);
+interface IJoinGameViewProps {
+    name: string;
+}
+
+function JoinGameView(props: IJoinGameViewProps) {
+    const [gameId, setGameId] = useState('' as string);
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+
+        // leave the lounge
+        leaveLounge(props.name);
+
         window.location.href = `/game?gameid=${gameId}`;
     }
 
@@ -110,13 +99,29 @@ function JoinGameView() {
     return <div className='join-game-view'>
         <p>When your friend creates a game they will send you a short code that you can enter below to join their game</p>
         <form onSubmit={(e) => handleSubmit(e)}>
-            <label htmlFor="game_id">Game ID</label>
+            <label htmlFor='game_id'>Game ID</label>
             <input type='text' className='form-control' required={true}
+                placeholder='paste your game ID here'
                 onChange={(e) => handleChange(e)}
                 name='game_id' />
             <button type='submit' className='btn btn-lg btn-primary form-control'>Join Game</button>
         </form>
     </div>
+}
+
+function joinLounge(name: string, isHeartbeat: boolean) {
+    socket.send(JSON.stringify({
+        msgType: 'join-lounge',
+        username: name,
+        isHeartbeat: isHeartbeat,
+    }));
+}
+
+function leaveLounge(name: string) {
+    socket.send(JSON.stringify({
+        msgType: 'leave-lounge',
+        username: name
+    }));
 }
 
 interface ILoungeState {
@@ -152,10 +157,16 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
         socket.onopen = (event: Event) => {
             console.log('socket opened');
             // once connected, request users
-            socket.send(JSON.stringify({
-                msgType: 'register',
-                username: this.state.name,
-            }));
+            if(this.state.name) {
+                joinLounge(this.state.name, false);
+            }
+
+            // send a heartbeat message every minute
+            window.setTimeout(() => {
+                if(this.state.name) {
+                    joinLounge(this.state.name, true);
+                }
+            }, 60 * 1000);
         };
     }
 
@@ -165,7 +176,7 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
             const j = JSON.parse(event.data);
             console.log(j);
             switch(j.msgType) {
-                case 'users':
+                case 'lounge-users':
                     this.setState({
                         loungeUsers: j.users
                     });
@@ -175,6 +186,9 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
                         newGameId: j.gameId,
                     });
                     break;
+                case 'lobby-users':
+                    // ignore this message type
+                    break;
                 default:
                     console.error(`Got unknown msg type: ${j.msgType}`);
                     break;
@@ -183,6 +197,11 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
     }
 
     showCreateGame(show: boolean) {
+        // leave the lounge
+        if(this.state.name) {
+            leaveLounge(this.state.name);
+        }
+
         this.setState({
             showGameCreation: show
         });
@@ -205,9 +224,9 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
             return (<main className='container'>
                 <CreateGameView gameId={this.state.newGameId}/>
             </main>);
-        } else if(this.state.showGameJoin) {
+        } else if(this.state.showGameJoin && this.state.name) {
             return (<main className='container'>
-                <JoinGameView />
+                <JoinGameView name={this.state.name} />
             </main>);
         } else if(this.state.name) {
             const peopleInLounge = this.state.loungeUsers.filter((user: string) => {
@@ -220,10 +239,10 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
                 <h1>Welcome to the Tysyacha Lounge</h1>
                 <div>Username: {this.state.name}</div>
 
-                <div className="btn-container">
-                    <button type="button" className="btn btn-lg btn-primary"
+                <div className='btn-container'>
+                    <button type='button' className='btn btn-lg btn-primary'
                         onClick={() => this.showCreateGame(true)}>Create Game</button>
-                    <button type="button" className="btn btn-lg btn-secondary"
+                    <button type='button' className='btn btn-lg btn-secondary'
                         onClick={() => this.showJoinGame(true)}>Join Game</button>
                 </div>
 

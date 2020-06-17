@@ -2,8 +2,14 @@ import React, {useState, useEffect} from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import { Deck, Card, Hand } from './cards';
-import {GameView, ICards} from "./game-view"
+import {GameView} from './game-view'
 import { OddsView } from './odds-view';
+import {GameLobby} from './lobby';
+import {readNameCookie} from './name-cookie';
+import {API, MessageType} from './api';
+
+
+const api = new API();
 
 function readGameId(): string | null {
 	const u = new URL(window.location.href);
@@ -11,85 +17,109 @@ function readGameId(): string | null {
 }
 
 function App() {
-	const [playerCards, setPlayerCards] = useState({} as ICards);
-	const [treasureCards, setTreasureCards] = useState([] as Card[]);
-	const [isDealt, setIsDealt] = useState(false);
+	/**
+	 * True iff there are 3 players who have joined this game
+	 */
+	const [hasStarted, setHasStarted] = useState(false);
 	const [gameId, setGameId] = useState(null as string | null);
 
+	/**
+	 * Lounge variables
+	 */
+	const [name, setName] = useState('' as string);
+	const [waitingUsers, setWaitingUsers] = useState([] as string[]);
+
+	function onDisconnect() {
+		api.sendMessage(MessageType.LEAVE_GAME, {
+			username: name,
+			gameId: gameId,
+		})
+	}
+
 	useEffect(() => {
-		/**
-		 * Deal the cards starting from the initial player
-		 * Use the random seed
-		 *
-		 * NOTE: this does not respect the rule that the last card dealt cannot be a 9
-		 */
-		function dealCards() {
-			// create the deck using the random seed
-			const deck = new Deck(1234);
+		function onGameUsers(j: any) {
+			console.log(`Received message of type ${j.msgType} for game ${j.gameId}`);
+			console.log(j);
+			if(j.gameId === gameId) {
+				// remove myself
+				const waitingUsers = j.users.filter((user: string) => {
+					return user !== name;
+				});
+				console.log("got waiting users from server:");
+				console.log(waitingUsers);
+				setWaitingUsers(waitingUsers);
 
-			// indexes 0-2 are players
-			const playerCards : ICards = {};
-			const treasureCards : Card[] = [];
-
-			// deal the cards out
-			// #players always 3
-
-			// deal cards to players (0-2)
-			for(let i = 0; i < 3; i++) {
-				const h = []
-				// deal 7 cards to each player
-				for(let j = 0; j < 7; j++) {
-					h.push(deck.pop());
+				// so there are 3 including yourself
+				if(waitingUsers.length === 2) {
+					setHasStarted(true);
 				}
-				playerCards[i] = new Hand(h);
 			}
+		}
 
-			// deal cards to treasure (3)
-			for(let i = 0; i < 3; i++) {
-				treasureCards.push(deck.pop());
+		async function joinGame (gameId: string, username: string) {
+			console.log(`joining game ${gameId}...`);
+			const r = await api.joinGame(gameId, username);
+			if (r.ok) {
+				const j = await r.json();
+				console.log('Game details:');
+				console.log(j);
+			} else {
+				console.error('Failed to join game')
 			}
-
-			setPlayerCards(playerCards);
-			setTreasureCards(treasureCards);
-			setIsDealt(true);
 		}
 
 		// read the gameId
-		setGameId(readGameId());
-
-		if(!isDealt) {
-			dealCards();
+		const gameId = readGameId()
+		if(gameId) {
+			setGameId(gameId);
+		} else {
+			window.location.href = '/lounge';
+			return;
 		}
 
-	}, [isDealt]);
+		// read the name
+		const name = readNameCookie();
+		if(name) {
+			setName(name);
+		} else {
+			// name not set. go back to where it can be set
+			window.location.href = '/lounge';
+			return;
+		}
 
-	return (
-		<div className="App">
-			<header>
-				<div className="game-id">Game ID: { gameId }</div>
-			</header>
-			<main className="container">
-				{/* <OddsView /> */}
-				{/* <form className="random-seed-form">
-					<div className="form-group">
-						<label htmlFor="random_seed">Random Seed</label>
-						<input className="form-control"
-							type="number" min={0} max={10000}
-							name="random_seed" id="random_seed"
-							defaultValue={randomSeed}
-							onChange={(e) => setRandomSeed(Number(e.target.value))} />
-					</div>
-					<button type="button"
-						className="btn btn-primary form-control"
-						onClick={() => dealCards()}>Deal</button>
-				</form> */}
+		api.socket.onopen = (e: Event) => {
+			console.log('Connected to websocket');
+			api.addMessageListener([MessageType.GAME_USERS], onGameUsers);
+			joinGame(gameId, name);
+		};
+	}, []);
 
-				{isDealt ?
-					<GameView playerCards={playerCards}
-						treasureCards={treasureCards} /> : null}
-			</main>
-		</div>
-	);
+	if(hasStarted) {
+		if(!gameId || !name) {
+			// gameId and name must be set at this point
+			window.location.href = '/lounge';
+		}
+		return (
+			<div className='App'>
+				<header>
+					<div className='game-id'>Game ID: { gameId }</div>
+				</header>
+				<main className='container'>
+					<GameView
+						api={api}
+						gameId={gameId as string}
+						name={name as string} />
+				</main>
+			</div>
+		);
+	} else {
+		return (<main className='container'>
+			<GameLobby
+				name={name}
+				gameId={gameId}
+				waitingUsers={waitingUsers} />
+		</main>);
+	}
 }
 
 export default App;

@@ -28,3 +28,7 @@ header {
 header .game-id {
 	font-size: 1.1rem;
 }
+
+.round-view {
+	padding-top: 1rem;
+}

@@ -1,82 +1,10 @@
 import React, {useState} from "react";
 import { Card, Suit, suitToString, Hand, CardValue } from './cards';
-import {getBidForHand} from "./bid-estimator";
-
-export type ICards = {[key: number]: Hand};
-
-interface IProps {
-    playerCards: ICards;
-    treasureCards: Card[];
-}
-
-enum GamePhase {
-    BIDDING = 1,
-    REVEAL_TREASURE = 2,
-    DISTRIBUTE_CARDS = 3,
-    PLAYING = 4,
-}
-
-interface IPlayerProps {
-    index: number;
-    cards: Hand;
-    phase: GamePhase;
-}
-
-
-/**
- * Display the player's cards
- * Organize them by suit
- */
-export function PlayerView(props: IPlayerProps) {
-    let elems = [];
-    let pts = props.cards.getPoints();
-
-    // display cards by suit
-    for(let [suit, cards] of Object.entries(props.cards.cardsBySuit)) {
-        // let cardElems = (cards as Card[]).map((card: Card) => {
-        //     return <span key={card.toString()}>{card.valueToString() }</span>;
-        // });
-        const cardElems = (cards as Card[]).map((card: Card) => {
-            return card.valueToString();
-        }).join(", ");
-
-        elems.push(<div key={`suit-${suit}-player-${props.index}-cards`}>
-            <span className="player-cards-suit">{suitToString(suit as Suit)}</span>
-            {cardElems}
-        </div>);
-    }
-
-    // does the player have a marriage?
-    const marriages = props.cards.marriages;
-    const potentialMarriages = [];
-
-    for(let [suit, cards] of Object.entries(props.cards.cardsBySuit)) {
-        if(marriages.includes(suit as Suit)) {
-            continue;
-        }
-        const l = (cards as Card[]).map((card: Card) => card.valueToString());
-        if(l.includes("Q") || l.includes("K")) {
-            potentialMarriages.push(suit);
-        }
-    }
-
-    return (<div className="player">
-        <h3>Player {props.index + 1}</h3>
-        { elems }
-        <div>Points: {pts}</div>
-        <div className="marriages">
-            <span>Marriages: </span>
-            { marriages.length > 0 ?
-                marriages.join(", ") : "none" }
-        </div>
-        { props.phase === GamePhase.BIDDING ?
-            <div className="potential-marriages">
-                <span>Potential Marriages: </span>
-                { potentialMarriages.length > 0 ?
-                    potentialMarriages.join(", ") : "none" }
-            </div> : null}
-    </div>);
-}
+import {API, MessageType} from './api';
+import { HEARTBEAT_INTERVAL } from './constants';
+import {ScoreView} from './score-view'
+import RoundView from "./round-view";
+import {GamePhase} from './game-mechanics';
 
 interface ITreasureProps {
     cards: Card[];
@@ -127,113 +55,161 @@ export function BidView(props: IBidProps) {
     </div>);
 }
 
-export function GameView(props: IProps) {
-    const [phase, setPhase] = useState(GamePhase.BIDDING);
-    const [currentPlayer, setCurrentPlayer] = useState(0);
-    const [isGameOver, setGameOver] = useState(false);
+interface IGameViewProps {
+    api: API;
+
+    gameId: string;
 
     /**
-     * These are only relevant during the bidding phase
+     * name of the user
      */
-    const [bids, setBids] = useState([] as Bid[]);
-    const [passedPlayers, setPassedPlayers] = useState([] as number[]);
+    name: string;
+}
+
+interface IGameViewState {
+    isGameOver: boolean;
+    gameSeeds: any;
+    round: number;
+    scores: {[key: string]: number};
+    playerNames: string[];
+    dealer: number;
+    playerIndex: number;
+}
+
+/**
+ * This component displays the entire *game*
+ * Not a single round of the game. The *game*
+ */
+export class GameView extends React.Component<IGameViewProps, IGameViewState> {
+    constructor(props: IGameViewProps) {
+        super(props);
+        this.state = {
+            isGameOver: false,
+            gameSeeds: {},
+            /**
+             * how many rounds have been played thus far
+             */
+            round: 0,
+            /**
+             * Map from name to score
+             */
+            scores: {},
+
+            /**
+             * In the correct order based on gameSeeds
+             */
+            playerNames: [],
+            /**
+             * Track the dealer
+             */
+            dealer: 0,
+            playerIndex: -1,
+        };
+
+        this.sendHeartbeat = this.sendHeartbeat.bind(this);
+        this.startHeartbeatTimer = this.startHeartbeatTimer.bind(this);
+        this.getPlayerNames = this.getPlayerNames.bind(this);
+    }
+
+    sendHeartbeat() {
+        this.props.api.sendMessage(MessageType.JOIN_GAME, {
+            gameId: this.props.gameId,
+            username: this.props.name,
+            isHeartbeat: true,
+        });
+        window.setTimeout(() => {
+            this.sendHeartbeat();
+        }, HEARTBEAT_INTERVAL);
+    }
+
+    startHeartbeatTimer() {
+        this.sendHeartbeat();
+    }
 
     /**
-     * These are only relevant during the playing phase
+     * set player names based on seeds
+     * lower player goes first
      */
-    const [trump, setTrump] = useState(null);
-    const [currentTrick, setCurrentTrick] = useState([]);
-    const [discard, setDiscard] = useState({});
-    const [constractPlayer, setContractPlayer] = useState(-1);
+    getPlayerNames(gameSeeds: any): string[] {
+        const players = Object.keys(gameSeeds);
+        players.sort((user1: string, user2: string) => {
+            return this.state.gameSeeds[user1] - this.state.gameSeeds[user2];
+        });
+        return players;
+    }
 
-    /**
-     * Evaluate bid for the current player
-     */
-    async function evalBidAI() {
-        let currentBid;
-        let isPass = false;
-        if(passedPlayers.includes(currentPlayer)) {
-            // must pass
-            currentBid = {
-                points: 0,
-                player: currentPlayer
-            };
-            isPass = true;
-        } else {
-            let bidPoints = getBidForHand(props.playerCards[currentPlayer]);
-
-            const highestBidPoints = bids.length === 0 ? 0 : Math.max(...bids.map((bid) => {
-                return bid.points;
-            }));
-
-            // there exists a previous bid
-            if(bidPoints > 0 && highestBidPoints >= bidPoints) {
-                bidPoints = 0;
+    componentDidMount() {
+        this.props.api.addMessageListener([MessageType.GAME_SEEDS], (data: any) => {
+            console.log(`Got game seeds from server for game ${data.gameId}:`);
+            console.log(data);
+            if(data.gameId === this.props.gameId) {
+                const seeds: any = {};
+                let scores: any = {};
+                // make sure that the seeds are in the right format
+                for(let [user, seed] of Object.entries(data.seeds)) {
+                    if(typeof seed === 'number') {
+                        seeds[user] = seed;
+                    } else {
+                        seeds[user] = Number.parseFloat(seed as string);
+                    }
+                }
+                // get score from server if included in the same message
+                if(data.scores) {
+                    scores = data.scores;
+                } else {
+                    // otherwise all scores are zeros
+                    for(let user of Object.keys(seeds)) {
+                        scores[user] = 0;
+                    }
+                }
+                // get round from server if included in the same message
+                let round = 0;
+                if(data.round) {
+                    round = data.round;
+                }
+                // get dealer from server if included in the same message
+                let dealer = 0;
+                if(data.dealer) {
+                    dealer = data.dealer;
+                }
+                const playerNames = this.getPlayerNames(seeds);
+                this.setState({
+                    gameSeeds: seeds,
+                    scores: scores,
+                    playerNames: playerNames,
+                    dealer: dealer,
+                    playerIndex: playerNames.indexOf(this.props.name),
+                    round: round,
+                });
             }
+        });
 
-            currentBid = {
-                points: bidPoints,
-                player: currentPlayer
-            };
-
-            isPass = bidPoints === 0;
+        if(Object.keys(this.state.gameSeeds).length === 0) {
+            // just in case
+            this.props.api.sendMessage(MessageType.GAME_SEEDS, {
+                gameId: this.props.gameId,
+                username: this.props.name,
+            });
         }
 
-        setBids([...bids, currentBid]);
-        if(isPass) {
-            await setPassedPlayers([...passedPlayers, currentPlayer]);
-        }
-
-        let nextPlayer = -1;
-        for(let i = 0; i < 3; i++) {
-            let p = (currentPlayer + i + 1) % 3;
-            if(!passedPlayers.includes(p)) {
-                nextPlayer = p;
-                break;
-            }
-        }
-
-        if(nextPlayer === -1) {
-            console.debug("all players have passed. game over - redeal.");
-            setGameOver(true);
-        } else if(nextPlayer === currentPlayer) {
-            console.debug(`all other players have passed. contract player is ${currentPlayer}`);
-            setPhase(GamePhase.REVEAL_TREASURE);
-            setContractPlayer(currentPlayer);
-        } else {
-            console.debug(`next player to bid is ${nextPlayer}`);
-            setCurrentPlayer(nextPlayer);
-        }
+        // send a regular heartbeat message
+        this.startHeartbeatTimer();
     }
 
-    function playRandomTurn() {
-        // do nothing
+    render() {
+        return (<div className='game-view'>
+            <ScoreView scores={this.state.scores}
+                playerNames={this.state.playerNames} />
+            { this.state.playerNames ?
+                <RoundView
+                    gameId={this.props.gameId}
+                    round={this.state.round}
+                    name={this.props.name}
+                    playerNames={this.state.playerNames}
+                    dealer={this.state.dealer}
+                    playerIndex={this.state.playerIndex}
+                    api={this.props.api} /> :
+                <div>Waiting for player names from server...</div> }
+        </div>);
     }
-
-    // display players
-    let players = [];
-    for(let i = 0; i < 3; i++) {
-        players.push(<PlayerView
-            key={`player-${i}`}
-            index={i}
-            phase={phase}
-            cards={props.playerCards[i]} />);
-    }
-
-    return (<div>
-        <div className="player-container">{ players }</div>
-        <TreasureView
-            cards={props.treasureCards}
-            phase={phase} />
-        <h3>{ phase === GamePhase.BIDDING ? "bidding phase": "playing phase" }</h3>
-        <BidView bids={bids} />
-        <div className="game-controls">
-            {phase === GamePhase.BIDDING ?
-                <button type="button" className="btn btn-primary"
-                    onClick={ () => evalBidAI() }>Evaluate Bid for Player {currentPlayer + 1}</button>
-                :
-                <button type="button" className="btn btn-primary"
-                    onClick={() => playRandomTurn() }>Play Random Turn</button> }
-        </div>
-    </div>);
 }
