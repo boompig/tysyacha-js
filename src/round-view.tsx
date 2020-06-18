@@ -2,7 +2,9 @@ import React, {useState, useEffect} from 'react';
 import API, { MessageType } from './api';
 import {Card, Hand} from './cards';
 import {BiddingView} from './bidding-view';
-import {GamePhase} from './game-mechanics';
+import { GamePhase, Bid } from './game-mechanics';
+import { RevealTreasureView } from './reveal-treasure-view';
+import DistributeCardsView from './distribute-cards-view';
 
 
 interface IRoundViewProps {
@@ -40,6 +42,10 @@ export function RoundView(props: IRoundViewProps) {
     const [phase, setPhase] = useState(GamePhase.NOT_DEALT);
     const [hand, setHand] = useState(null as Hand | null);
     const [hasRoundInfo, setHasRoundInfo] = useState(false);
+    // will be set to 3 cards when it's visible
+    const [treasure, setTreasure] = useState([] as Card[]);
+    const [winningBid, setWinningBid] = useState(null  as Bid | null);
+    const [finalContract, setFinalContract] = useState(null as Bid | null);
 
     useEffect(() => {
         async function getPlayerCards() {
@@ -65,6 +71,9 @@ export function RoundView(props: IRoundViewProps) {
                     getPlayerCards();
                 }
             }
+            if(roundInfo.finalContract) {
+                setFinalContract(roundInfo.finalContract);
+            }
             setHasRoundInfo(true);
         }
 
@@ -72,7 +81,7 @@ export function RoundView(props: IRoundViewProps) {
             getRoundInfo();
         }
 
-        props.api.addMessageListener([MessageType.GAME_DEAL], (data: any) => {
+        props.api.addMessageListener([MessageType.BROADCAST_DEAL], (data: any) => {
             // this is a broadcast message so have to filter
 
             if(data.gameId === props.gameId && !hand) {
@@ -81,8 +90,55 @@ export function RoundView(props: IRoundViewProps) {
         });
     }, [props.round, props.gameId, hand, props.api, props.name, hasRoundInfo]);
 
+    useEffect(() => {
+        // do this if the winning bid has not yet been fetched
+        async function getWinningBid() {
+            const roundInfo = await props.api.getGameRoundInfo(props.gameId, props.round);
+            await setWinningBid(roundInfo.winningBid);
+        }
+
+        async function getTreasure() {
+            const treasure = await props.api.getTreasure(props.gameId, props.round);
+            setTreasure(treasure);
+        }
+
+        if ((phase === GamePhase.REVEAL_TREASURE || phase === GamePhase.DISTRIBUTE_CARDS) && !winningBid) {
+            // get the winning bid from the server
+            getWinningBid();
+        }
+        if ((phase === GamePhase.REVEAL_TREASURE || phase === GamePhase.DISTRIBUTE_CARDS) && (!treasure || treasure.length === 0)) {
+            getTreasure();
+        }
+    }, [props.api, winningBid, phase, props.gameId, props.round, treasure]);
+
+    useEffect(() => {
+        props.api.addMessageListener([MessageType.BROADCAST_FINAL_CONTRACT], (msg) => {
+            setPhase(GamePhase.DISTRIBUTE_CARDS);
+            setFinalContract({
+                points: msg.points,
+                player: msg.player,
+            });
+        });
+    }, [props.api, props.gameId]);
+
     async function handleDeal() {
         await props.api.postDealCards(props.gameId, props.round, props.name);
+    }
+
+    async function handleSetFinalContract(points: number) {
+        await props.api.postFinalContract(props.gameId, props.round, props.name, points);
+    }
+
+    async function handleDistributeCards(distributionMap: {[key: string]: Card}, keptCards: Card[]) {
+        await props.api.postDistributeCards(props.gameId, props.round, props.name, distributionMap, keptCards);
+    }
+
+    async function handleBiddingComplete(winningBid: Bid | null) {
+        // request the treasure first to avoid duplicate requests
+        const treasure = await props.api.getTreasure(props.gameId, props.round);
+        await setPhase(GamePhase.REVEAL_TREASURE);
+        await setWinningBid(winningBid);
+        await setTreasure(treasure);
     }
 
     if(phase === GamePhase.NOT_DEALT) {
@@ -109,39 +165,54 @@ export function RoundView(props: IRoundViewProps) {
                     dealer={props.dealer}
                     playerIndex={props.playerIndex}
                     api={props.api}
-                    playerCards={hand} />
+                    playerCards={hand}
+                    onNextPhase={handleBiddingComplete} />
             </div>
+        }
+    } else if(phase === GamePhase.REVEAL_TREASURE) {
+        if (!winningBid) {
+            // get the winning bid
+            return <div>Waiting for winning bid from server...</div>;
+        } else if (!hand) {
+            return <div>Waiting for hand from server...</div>
+        } else {
+            return <div className='round-view'>
+                <RevealTreasureView
+                    name={props.name}
+                    playerIndex={props.playerIndex}
+                    gameId={props.gameId}
+                    winningBid={winningBid}
+                    api={props.api}
+                    treasure={treasure}
+                    hand={hand}
+                    onSetFinalContract={handleSetFinalContract} />
+            </div>
+        }
+    } else if(phase === GamePhase.DISTRIBUTE_CARDS) {
+        if (!finalContract) {
+            // get the winning bid
+            return <div>Waiting for final contract from server...</div>;
+        } else if (!hand) {
+            return <div>Waiting for hand from server...</div>
+        } else {
+            return <div className='round-view'>
+                <DistributeCardsView
+                    name={props.name}
+                    gameId={props.gameId}
+                    playerIndex={props.playerIndex}
+                    round={props.round}
+                    hand={hand}
+                    treasure={treasure}
+                    finalContract={finalContract}
+                    playerNames={props.playerNames}
+                    onDistribute={handleDistributeCards} />
+            </div>;
         }
     } else {
         return <div className='round-view'>
-            player {props.playerNames[props.dealer]} has dealt
+            player {props.playerNames[props.dealer]} has dealt. Phase is now {phase}.
         </div>;
     }
 }
 
 export default RoundView;
-
-    // async setGameOver(isGameOver: boolean) {
-    //     await this.setState({
-    //         isGameOver: isGameOver
-    //     });
-    // }
-
-    // async setCurrentPlayer(currentPlayer: number) {
-    //     await this.setState({
-    //         currentPlayer: currentPlayer
-    //     });
-    // }
-
-    // async setContractPlayer(contractPlayer: number) {
-    //     await this.setState({
-    //         contractPlayer: contractPlayer
-    //     });
-    // }
-
-    // state-setting functions similar to useState
-    // this.setBids = this.setBids.bind(this);
-    // this.setGameOver = this.setGameOver.bind(this);
-    // this.setPhase = this.setPhase.bind(this);
-    // this.setCurrentPlayer = this.setCurrentPlayer.bind(this);
-    // this.setContractPlayer = this.setContractPlayer.bind(this);

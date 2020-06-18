@@ -23,10 +23,10 @@ export function PlayerView(props: IPlayerProps) {
         // });
         const cardElems = (cards as Card[]).map((card: Card) => {
             return card.valueToString();
-        }).join(", ");
+        }).join(', ');
 
         elems.push(<div key={`suit-${suit}-player-${props.index}-cards`}>
-            <span className="player-cards-suit">{suitToString(suit as Suit)}</span>
+            <span className='player-cards-suit'>{suitToString(suit as Suit)}</span>
             {cardElems}
         </div>);
     }
@@ -40,25 +40,25 @@ export function PlayerView(props: IPlayerProps) {
             continue;
         }
         const l = (cards as Card[]).map((card: Card) => card.valueToString());
-        if(l.includes("Q") || l.includes("K")) {
+        if(l.includes('Q') || l.includes('K')) {
             potentialMarriages.push(suit);
         }
     }
 
-    return (<div className="player">
+    return (<div className='player'>
         {/* <h3>Player {props.index + 1}</h3> */}
         { elems }
         <div>Points: {pts}</div>
-        <div className="marriages">
+        <div className='marriages'>
             <span>Marriages: </span>
             { marriages.length > 0 ?
-                marriages.join(", ") : "none" }
+                marriages.join(', ') : 'none' }
         </div>
         { props.phase === GamePhase.BIDDING ?
-            <div className="potential-marriages">
+            <div className='potential-marriages'>
                 <span>Potential Marriages: </span>
                 { potentialMarriages.length > 0 ?
-                    potentialMarriages.join(", ") : "none" }
+                    potentialMarriages.join(', ') : 'none' }
             </div> : null}
     </div>);
 }

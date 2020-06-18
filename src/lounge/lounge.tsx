@@ -186,7 +186,7 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
                         newGameId: j.gameId,
                     });
                     break;
-                case 'lobby-users':
+                case 'game-users':
                     // ignore this message type
                     break;
                 default:

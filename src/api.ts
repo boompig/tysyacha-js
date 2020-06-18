@@ -1,5 +1,6 @@
 import {WEBSOCKET_SERVER, HTTP_SERVER} from './constants';
-import {Bid} from './game-mechanics';
+import {Bid, GamePhase} from './game-mechanics';
+import {Card} from './cards';
 
 export enum MessageType {
     /**
@@ -56,7 +57,7 @@ export enum MessageType {
      * tell the server there was a deal event
      * when receiving this event, means the server has dealt cards and is ready to ask for the cards
      */
-    GAME_DEAL = 'game-deal',
+    BROADCAST_DEAL = 'game-deal',
 
     /**
      * Request your cards
@@ -67,6 +68,22 @@ export enum MessageType {
      * When new bids are created by other players, they are broadcast using this message type
      */
     BROADCAST_BID = 'broadcast-bid',
+
+    /**
+     * When a player fixes on a final contract, the server lets everyone know what that is
+     */
+    BROADCAST_FINAL_CONTRACT = 'broadcast-final-contract',
+
+    /**
+     * Broadcast when the contract player distributes cards.
+     * Clients are expected to poll the server to get their new cards
+     */
+    BROADCAST_DISTRIBUTE_CARDS = 'broadcast-distribute-cards',
+}
+
+export interface IBidsResponse {
+    bidHistory: Bid[];
+    nextPhase: GamePhase;
 }
 
 export class API {
@@ -159,29 +176,58 @@ export class API {
         }
     }
 
-    async getBids(gameId: string, round: number, playerNames: string[]): Promise<Bid[]> {
+    async getBids(gameId: string, round: number, playerNames: string[]): Promise<IBidsResponse> {
         const r = await this.getJSON(`/game/${gameId}/round/${round}/bids`);
         if(r.ok) {
             const j = await r.json();
-            return j.map((item: any) => {
-                return {
-                    player: playerNames.indexOf(item.player),
-                    points: item.bid,
-                };
-            })
+            return j;
         } else {
             throw new Error(`failed to get bids for game ${gameId} round ${round}`);
         }
     }
 
-    async postBid(gameId: string, round: number, username: string, bid: number): Promise<Response> {
+    async postBid(gameId: string, round: number, username: string, points: number): Promise<Response> {
         const r = await this.postJSON(`/game/${gameId}/round/${round}/bid`, {
             username: username,
-            bid: bid,
+            points: points,
         });
         return r;
     }
 
+    async getTreasure(gameId: string, round: number): Promise<Card[]> {
+        const r = await this.getJSON(`/game/${gameId}/round/${round}/treasure`);
+        if(r.ok) {
+            const j = await r.json();
+            // make sure the return value is actually a card object
+            return j.map((item: any) => {
+                return new Card(item.value, item.suit);
+            })
+        } else {
+            throw new Error(`failed to get treasure for game ${gameId}`);
+        }
+    }
+
+    async postFinalContract(gameId: string, round: number, username: string, points: number): Promise<Response> {
+        const r = await this.postJSON(`/game/${gameId}/round/${round}/final-contract`, {
+            username: username,
+            points: points,
+        });
+        return r;
+    }
+
+    async postDistributeCards(gameId: string, round: number, username: string,
+        distributedCards: {[key: string]: Card}, keptCards: Card[]): Promise<Response> {
+        const r = await this.postJSON(`/game/${gameId}/round/${round}/distribute-cards`, {
+            username,
+            distributedCards,
+            keptCards,
+        });
+        return r;
+    }
+
+    /**
+     * Send a websocket message
+     */
     async sendMessage(msgType: MessageType, data: any) {
         const msg: any = {};
         Object.assign(msg, data);

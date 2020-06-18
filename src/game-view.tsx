@@ -6,29 +6,6 @@ import {ScoreView} from './score-view'
 import RoundView from "./round-view";
 import {GamePhase} from './game-mechanics';
 
-interface ITreasureProps {
-    cards: Card[];
-    phase: GamePhase;
-}
-
-export function TreasureView(props: ITreasureProps) {
-    const cards = props.cards.map((card: Card) => {
-        return <span key={`treasure-${card.toString()}`}>
-            {card.toString()}
-        </span>;
-    });
-    if(props.phase === GamePhase.DISTRIBUTE_CARDS || props.phase === GamePhase.PLAYING) {
-        // don't show anything
-        return null;
-    }
-    return (<div>
-        <h3>Treasure</h3>
-        <div>
-            { props.phase === GamePhase.BIDDING ? "???" : cards }
-        </div>
-    </div>);
-}
-
 /**
  * A bid of 0 -> pass
  */

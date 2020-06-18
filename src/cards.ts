@@ -56,6 +56,11 @@ function valueToString(value: CardValue): string {
     }
 }
 
+export interface ICard {
+    suit: Suit;
+    value: CardValue;
+}
+
 export class Card {
     suit: Suit;
     value: CardValue;
@@ -74,6 +79,10 @@ export class Card {
         const s = suitToString(this.suit);
         return s + v;
     }
+}
+
+export function cardToString(c: ICard): string {
+    return (new Card(c.value, c.suit)).toString();
 }
 
 type CardsBySuit = {[key: string]: Card[]};

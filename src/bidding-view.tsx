@@ -1,9 +1,8 @@
 import React, {useState, useEffect} from 'react';
-import API, { MessageType } from './api';
+import API, { MessageType, IBidsResponse } from './api';
 import {PlayerView} from './player-view';
-import {Card, Hand} from './cards';
-import { GamePhase, Bid } from './game-mechanics';
-import { last } from 'lodash';
+import { Hand } from './cards';
+import { GamePhase, Bid, getWinningBid } from './game-mechanics';
 
 
 interface IProps {
@@ -25,6 +24,8 @@ interface IProps {
     api: API;
 
     playerCards: Hand;
+
+    onNextPhase(winningBid: Bid | null): any;
 }
 
 /**
@@ -54,7 +55,7 @@ export function BiddingView(props: IProps) {
     }, [props.dealer, biddingPlayer]);
 
     useEffect(() => {
-        function updateBidHistory(bidHistory: Bid[], lastBidder: string) {
+        function updateBidHistory(bidHistory: Bid[], lastBidder: string, nextPhase: GamePhase) {
             // calculate next bidding player
             const lastBidderIndex = props.playerNames.indexOf(lastBidder);
             const nextBidderIndex = (lastBidderIndex + 1) % 3;
@@ -67,7 +68,7 @@ export function BiddingView(props: IProps) {
                 const newPassedPlayers = bidHistory.filter((bid: Bid) => {
                     return bid.points === 0;
                 }).map((bid: Bid) => {
-                    return props.playerNames[bid.player];
+                    return bid.player;
                 });
                 setPassedPlayers(newPassedPlayers);
             }
@@ -76,20 +77,20 @@ export function BiddingView(props: IProps) {
                     return bid.points;
                 }));
                 setHighestBid(newHighestBid);
+            } else {
+                setHighestBid(0);
+            }
+            if(nextPhase !== GamePhase.BIDDING) {
+                console.log(`we're done with bidding phase. next phase is ${nextPhase}`);
+                const winningBid = getWinningBid(bids);
+                props.onNextPhase(winningBid);
             }
         }
 
         function onNewBid(data: any) {
             // have to filter because it's a broadcast
             if(data.gameId === props.gameId) {
-                // convert the data into the right format
-                const bidHistory = data.bidHistory.map((item: any) => {
-                    return {
-                        player: props.playerNames.indexOf(item.player),
-                        points: item.bid,
-                    };
-                });
-                return updateBidHistory(bidHistory, data.lastBidder);
+                return updateBidHistory(data.bidHistory, data.lastBidder, data.nextPhase);
             }
         }
 
@@ -98,15 +99,15 @@ export function BiddingView(props: IProps) {
             setSubscribed(true);
         }
         if(!fetchedBiddingHistory) {
-            props.api.getBids(props.gameId, props.round, props.playerNames).then((bidHistory: Bid[]) => {
-                if(bidHistory.length > 0) {
-                    const lastBidder = bidHistory[bidHistory.length - 1].player;
-                    updateBidHistory(bidHistory, props.playerNames[lastBidder]);
+            props.api.getBids(props.gameId, props.round, props.playerNames).then((response: IBidsResponse) => {
+                if(response.bidHistory.length > 0) {
+                    const lastBidder = response.bidHistory[response.bidHistory.length - 1].player;
+                    updateBidHistory(response.bidHistory, lastBidder, response.nextPhase);
                 }
                 setFetchedBiddingHistory(true);
             });
         }
-    }, [isSubscribed, fetchedBiddingHistory, bids, props.api, props.playerNames, props.gameId, props.round]);
+    }, [isSubscribed, fetchedBiddingHistory, bids, props]);
 
     function handleBidSubmit (e: React.SyntheticEvent, isPass: boolean) {
         e.preventDefault();
@@ -125,7 +126,7 @@ export function BiddingView(props: IProps) {
         }
         // add that bid to the bidding history
         setBids([...bids, {
-            player: props.playerIndex,
+            player: props.name,
             points: pts,
         }]);
         // send the bid to the server
@@ -139,7 +140,7 @@ export function BiddingView(props: IProps) {
 
     const bidRows = bids.map((bid: Bid, i: number) => {
         return <tr key={`}bid-row-${i}`}>
-            <td>{props.playerNames[bid.player]}</td>
+            <td>{bid.player}</td>
             <td>{bid.points === 0 ? 'pass' : bid.points }</td>
         </tr>
     });
