@@ -1,6 +1,6 @@
-import {WEBSOCKET_SERVER, HTTP_SERVER} from './constants';
-import {Bid, GamePhase} from './game-mechanics';
-import {Card} from './cards';
+import { WEBSOCKET_SERVER, HTTP_SERVER } from './constants';
+import { Bid, GamePhase, ITrickCard, IPastTrick } from './game-mechanics';
+import { Card, ICard, Suit } from './cards';
 
 export enum MessageType {
     /**
@@ -79,6 +79,37 @@ export enum MessageType {
      * Clients are expected to poll the server to get their new cards
      */
     BROADCAST_DISTRIBUTE_CARDS = 'broadcast-distribute-cards',
+
+    /**
+     * Broadcast when a player plays a card on their turn
+     * Contains whether the resulting play is a marriage declaration
+     * Also contains what card the player played
+     */
+    BROADCAST_PLAY_CARD = 'broadcast-play-card',
+}
+
+/**
+ * Expected fields in a message of type BROADCAST_PLAY_CARD
+ */
+export interface IPlayCardMessage {
+    gameId: string;
+    round: number;
+    msgType: MessageType.BROADCAST_PLAY_CARD;
+    player: string;
+    card: ICard;
+    isMarriage: boolean;
+    /**
+     * this is a unique string to identify this particular message
+     * this helps detect prevent parsing duplicate messages on the client
+     */
+    id: string;
+}
+
+export interface IPlayingPhaseInfo {
+    currentTrick: ITrickCard[];
+    pastTricks: IPastTrick[];
+    turn: string;
+    marriage: Suit | null;
 }
 
 export interface IBidsResponse {
@@ -223,6 +254,32 @@ export class API {
             keptCards,
         });
         return r;
+    }
+
+    async postPlayCard(gameId: string, round: number, username: string,
+        card: Card, isMarriage: boolean): Promise<Response> {
+        const r = await this.postJSON(`/game/${gameId}/round/${round}/play-card`, {
+            username,
+            card,
+            isMarriage,
+        });
+        return r;
+    }
+
+    async getPlayingPhaseInfo(gameId: string, round: number): Promise<IPlayingPhaseInfo> {
+        const r = await this.getJSON(`/game/${gameId}/round/${round}/playing-phase-info`);
+        if(r.ok) {
+            const j = (await r.json()) as IPlayingPhaseInfo;
+            j.currentTrick = j.currentTrick.map((tc: ITrickCard) => {
+                return {
+                    player: tc.player,
+                    card: new Card(tc.card.value, tc.card.suit),
+                };
+            });
+            return j;
+        } else {
+            throw new Error(`failed to get playing phase info for game ${gameId}`);
+        }
     }
 
     /**

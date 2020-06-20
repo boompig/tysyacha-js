@@ -91,7 +91,6 @@ export function DistributeCardsView(props: IProps) {
         props.onDistribute(distributeMap, keptCards);
     }
 
-
     return <div className='distribute-cards-view'>
         <div>Must give away 2 cards</div>
         <h3>Your Hand (includes treasure)</h3>

@@ -1,10 +1,11 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import API, { MessageType } from './api';
 import {Card, Hand} from './cards';
 import {BiddingView} from './bidding-view';
 import { GamePhase, Bid } from './game-mechanics';
 import { RevealTreasureView } from './reveal-treasure-view';
 import DistributeCardsView from './distribute-cards-view';
+import { PlayingView } from './playing-view';
 
 
 interface IRoundViewProps {
@@ -47,20 +48,20 @@ export function RoundView(props: IRoundViewProps) {
     const [winningBid, setWinningBid] = useState(null  as Bid | null);
     const [finalContract, setFinalContract] = useState(null as Bid | null);
 
+    const getPlayerCards = useCallback(async function getPlayerCards() {
+        const playerHand = await props.api.getPlayerCards(props.gameId, props.name);
+        console.log('Got cards:');
+        console.log(playerHand);
+
+        const cards = playerHand.cards.map((playerCard: any) => {
+            return new Card(playerCard.value, playerCard.suit);
+        });
+
+        const hand = new Hand(cards);
+        setHand(hand);
+    }, [props.gameId, props.name, props.api]);
+
     useEffect(() => {
-        async function getPlayerCards() {
-            const playerHand = await props.api.getPlayerCards(props.gameId, props.name);
-            console.log('Got cards:');
-            console.log(playerHand);
-
-            const cards = playerHand.cards.map((playerCard: any) => {
-                return new Card(playerCard.value, playerCard.suit);
-            });
-
-            const hand = new Hand(cards);
-            setHand(hand);
-        }
-
         async function getRoundInfo() {
             const roundInfo = await props.api.getGameRoundInfo(props.gameId, props.round);
             console.log(`got round info for round ${props.round}`);
@@ -88,7 +89,7 @@ export function RoundView(props: IRoundViewProps) {
                 getPlayerCards();
             }
         });
-    }, [props.round, props.gameId, hand, props.api, props.name, hasRoundInfo]);
+    }, [props.round, props.gameId, hand, props.api, props.name, hasRoundInfo, getPlayerCards]);
 
     useEffect(() => {
         // do this if the winning bid has not yet been fetched
@@ -112,14 +113,25 @@ export function RoundView(props: IRoundViewProps) {
     }, [props.api, winningBid, phase, props.gameId, props.round, treasure]);
 
     useEffect(() => {
-        props.api.addMessageListener([MessageType.BROADCAST_FINAL_CONTRACT], (msg) => {
-            setPhase(GamePhase.DISTRIBUTE_CARDS);
-            setFinalContract({
-                points: msg.points,
-                player: msg.player,
-            });
+        props.api.addMessageListener([MessageType.BROADCAST_FINAL_CONTRACT], async (msg) => {
+            if (msg.gameId === props.gameId) {
+                await setPhase(GamePhase.DISTRIBUTE_CARDS);
+                await setFinalContract({
+                    points: msg.points,
+                    player: msg.player,
+                });
+            }
         });
     }, [props.api, props.gameId]);
+
+    useEffect(() => {
+        props.api.addMessageListener([MessageType.BROADCAST_DISTRIBUTE_CARDS], async (msg) => {
+            if (msg.gameId === props.gameId) {
+                await setPhase(GamePhase.PLAYING);
+                await getPlayerCards();
+            }
+        });
+    }, [props.api, props.gameId, getPlayerCards]);
 
     async function handleDeal() {
         await props.api.postDealCards(props.gameId, props.round, props.name);
@@ -130,7 +142,14 @@ export function RoundView(props: IRoundViewProps) {
     }
 
     async function handleDistributeCards(distributionMap: {[key: string]: Card}, keptCards: Card[]) {
-        await props.api.postDistributeCards(props.gameId, props.round, props.name, distributionMap, keptCards);
+        console.log('submitting cards for distribution:');
+        console.log(distributionMap);
+        console.log('Keeping cards:');
+        console.log(keptCards);
+        const r = await props.api.postDistributeCards(props.gameId, props.round, props.name, distributionMap, keptCards);
+        const j = await r.json()
+        console.log('server response:');
+        console.log(j);
     }
 
     async function handleBiddingComplete(winningBid: Bid | null) {
@@ -154,7 +173,7 @@ export function RoundView(props: IRoundViewProps) {
         }
     } else if(phase === GamePhase.BIDDING) {
         if(!hand) {
-            return <div className='round-view'>waiting for hand...</div>;
+            return <div className='round-view'>waiting for hand from server...</div>;
         } else {
             return <div className='round-view'>
                 <BiddingView
@@ -208,10 +227,26 @@ export function RoundView(props: IRoundViewProps) {
                     onDistribute={handleDistributeCards} />
             </div>;
         }
-    } else {
-        return <div className='round-view'>
-            player {props.playerNames[props.dealer]} has dealt. Phase is now {phase}.
+    } else if(phase === GamePhase.PLAYING) {
+        if (!finalContract) {
+            return <div>Waiting for final contract from server...</div>;
+        } else if (!hand) {
+            return <div>Waiting for hand from server...</div>;
+        } else {
+            return <div className='round-view'>
+                <PlayingView
+                    name={props.name}
+                    playerIndex={props.playerIndex}
+                    gameId={props.gameId}
+                    round={props.round}
+                    finalContract={finalContract}
+                    hand={hand}
+                    playerNames={props.playerNames}
+                    api={props.api} />
         </div>;
+        }
+    } else {
+        throw new Error(`unknown phase: ${phase}`);
     }
 }
 

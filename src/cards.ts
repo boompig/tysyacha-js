@@ -87,6 +87,14 @@ export function cardToString(c: ICard): string {
 
 type CardsBySuit = {[key: string]: Card[]};
 
+interface IHand {
+    cards: Card[];
+
+    cardsBySuit: CardsBySuit;
+
+    marriages: Suit[];
+}
+
 /**
  * Utility functions for a hand
  */

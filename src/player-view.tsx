@@ -1,5 +1,5 @@
-import React, {useState} from 'react';
-import { Card, Suit, suitToString, Hand, CardValue } from './cards';
+import * as React from 'react';
+import { Card, Suit, suitToString, Hand } from './cards';
 import {GamePhase} from './game-mechanics';
 
 interface IPlayerProps {
@@ -48,7 +48,8 @@ export function PlayerView(props: IPlayerProps) {
     return (<div className='player'>
         {/* <h3>Player {props.index + 1}</h3> */}
         { elems }
-        <div>Points: {pts}</div>
+        { props.phase !== GamePhase.PLAYING ?
+            <div>Points: {pts}</div> : null }
         <div className='marriages'>
             <span>Marriages: </span>
             { marriages.length > 0 ?
