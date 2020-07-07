@@ -17,6 +17,19 @@ export enum Suit {
     SPADES = "♠"
 }
 
+export function getMarriageValue(suit: Suit): number {
+    switch(suit) {
+        case Suit.HEARTS:
+            return 100;
+        case Suit.DIAMONDS:
+            return 80;
+        case Suit.CLUBS:
+            return 60;
+        case Suit.SPADES:
+            return 40;
+    }
+};
+
 /**
  * Suits are returned in the order they are displayed
  */
@@ -39,7 +52,7 @@ export function suitToString(suit: Suit): string {
     return suit.valueOf();
 }
 
-function valueToString(value: CardValue): string {
+export function valueToString(value: CardValue): string {
     switch(value) {
         case CardValue.ACE:
             return "A";
@@ -119,11 +132,13 @@ export class Hand {
         this.marriages = this._findMarriages();
     }
 
-    hasCard(value: CardValue): boolean {
-        const values = (this.cards as Card[]).map((card) => {
-            return card.value;
-        });
-        return values.includes(value);
+    hasCard(needle: ICard): boolean {
+        for(let card of this.cards) {
+            if(card.suit === needle.suit && card.value === needle.value) {
+                return true;
+            }
+        }
+        return false;
     }
 
     _sortCardsBySuit(cards: Card[]): CardsBySuit {

@@ -1,0 +1,63 @@
+.table {
+    padding-top: 1rem;
+}
+
+.player-hand, .trick-card-container, .treasure-container, .player-tricks-taken {
+    display: flex;
+    flex-direction: row;
+    width: 99%;
+    max-width: 1024px;
+    justify-content: space-evenly;
+    padding: 1rem;
+}
+
+.treasure-container .playing-card:not(.card-selected) {
+    margin-top: 1rem;
+    margin-bottom: 0;
+}
+
+.treasure-container .playing-card.card-selected {
+    margin: 0 auto;
+}
+
+.treasure-container .target-player {
+    text-align: center;
+    font-size: 1rem;
+}
+
+.playing-card.card-active {
+    cursor: pointer;
+}
+
+.playing-card {
+    border: 1px solid #111;
+    border-radius: 3px;
+
+    font-size: 1.2rem;
+    min-height: 125px;
+    min-width: 85px;
+    width: 85px;
+    min-width: 85px;
+
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+    padding: 0.3rem;
+}
+
+.playing-card .card-top-right-corner {
+    text-align: right;
+}
+
+.playing-card.card-black {
+    color: black;
+}
+
+.playing-card.card-red {
+    color: red;
+}
+
+.active-player .player-name {
+    color: #696ef0;
+    font-weight: bold;
+}

@@ -1,4 +1,4 @@
-import { Card, Hand, CardValue, Suit, ICard } from "./cards";
+import { Card, Hand, CardValue, Suit, ICard, getMarriageValue } from "./cards";
 
 export enum GamePhase {
     NOT_DEALT = 0,
@@ -6,6 +6,7 @@ export enum GamePhase {
     REVEAL_TREASURE = 2,
     DISTRIBUTE_CARDS = 3,
     PLAYING = 4,
+    SCORING = 5,
 }
 
 /**
@@ -53,13 +54,24 @@ export function getWinningCard(cards: ITrickCard[], marriage: null | Suit): ITri
     for(let tc of cards) {
         let isBetter = false;
         if (marriage && tc.card.suit === marriage) {
+            // this player played a trump
             if (bestCard.suit === marriage) {
                 isBetter = tc.card.value > bestCard.value;
             } else {
                 isBetter = true
             }
+        } else if(tc.card.suit === cards[0].card.suit) {
+            // this player played in the "correct" suit
+            if(marriage && bestCard.suit === marriage) {
+                // tough luck - someone else played a trump
+                isBetter = false;
+            } else {
+                // highest card wins
+                isBetter = tc.card.value > bestCard.value;
+            }
         } else {
-            isBetter = tc.card.value > bestCard.value;
+            // this player played the wrong suit and not a trump
+            isBetter = false;
         }
 
         if (isBetter) {
@@ -72,6 +84,24 @@ export function getWinningCard(cards: ITrickCard[], marriage: null | Suit): ITri
         player: winningP,
         card: bestCard,
     };
+}
+
+/**
+ * Return true iff the player can play the given card from their hand given the trick
+ * Assume the card is part of the hand
+ */
+export function canPlayCard(hand: Hand, trick: ITrickCard[], card: Card): boolean {
+    if(trick.length === 0) {
+        // they can play whatever card they want
+        return true;
+    }
+    const leadingSuit = trick[0].card.suit;
+    if(card.suit === leadingSuit) {
+        // can always play in the same suit as the first card in the trick
+        return true;
+    }
+    // can play any other card so long as the player has no cards in the leading suit
+    return hand.cardsBySuit[leadingSuit].length === 0;
 }
 
 /**
@@ -98,4 +128,47 @@ export function getWinningBid(bidHistory: Bid[]): Bid | null {
         player: contractPlayer,
         points: contractPts,
     } as Bid;
+}
+
+/**
+ * Count the # of points in a single trick
+ */
+export function _countTrickPoints(trick: ITrickCard[]): number {
+    return trick.map((tc: ITrickCard) => {
+        return tc.card.value;
+    }).reduce((total: number, cardValue: CardValue) => {
+        return total + cardValue;
+    }, 0);
+}
+
+/**
+ * Count the # of points in all tricks. Round to nearest 5
+ */
+export function countTrickPoints(tricks: ITrickCard[][]): number {
+    const pts  = tricks.map((trick: ITrickCard[]) => {
+        return _countTrickPoints(trick);
+    }).reduce((total: number, trickPoints: number) => {
+        return total + trickPoints;
+    }, 0);
+    if(pts % 5 < 3) {
+        // 0, 1, 2
+        return pts - (pts % 5);
+    } else {
+        // 3, 4
+        return pts + (5 - (pts % 5));
+    }
+}
+
+export function computeRoundScores(playerNames: string[], tricksTaken: {[key: string]: ITrickCard[][]}, declaredMarriages: {[key: string]: Suit[]}): {[key: string]: number} {
+    const finalPoints = {} as {[key: string]: number};
+    playerNames.forEach((name: string) => {
+        let pts = countTrickPoints(tricksTaken[name]);
+        if(name in declaredMarriages) {
+            declaredMarriages[name].forEach((suit: Suit) => {
+                pts += getMarriageValue(suit);
+            });
+        }
+        finalPoints[name] = pts;
+    });
+    return finalPoints;
 }

@@ -4,6 +4,7 @@ import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 import Lounge from "./lounge/lounge";
+import {TestView} from "./test-view";
 
 console.log(window.location.pathname);
 
@@ -13,6 +14,13 @@ if(window.location.pathname === "/") {
 	ReactDOM.render(
 		<React.StrictMode>
 			<Lounge />
+		</React.StrictMode>,
+		document.getElementById('root')
+	);
+} else if(window.location.pathname === "/test") {
+	ReactDOM.render(
+		<React.StrictMode>
+			<TestView />
 		</React.StrictMode>,
 		document.getElementById('root')
 	);
