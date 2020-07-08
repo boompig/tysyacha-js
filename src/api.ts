@@ -2,6 +2,14 @@ import { WEBSOCKET_SERVER, HTTP_SERVER } from './constants';
 import { Bid, GamePhase, ITrickCard, IPastTrick } from './game-mechanics';
 import { Card, ICard, Suit } from './cards';
 
+if(typeof WebSocket === "undefined") {
+    var WebSocket = require("ws");
+}
+
+if(typeof fetch === "undefined" && process.env.IS_SERVER !== "1") {
+    var fetch = require("node-fetch");
+}
+
 export enum MessageType {
     /**
      * Lounge - initial waiting area
@@ -280,6 +288,13 @@ export class API {
         } else {
             throw new Error(`failed to get playing phase info for game ${gameId}`);
         }
+    }
+
+    async postJoinLounge(username: string): Promise<Response> {
+        const r = await this.postJSON(`/lounge/join`, {
+            username,
+        });
+        return r;
     }
 
     /**
