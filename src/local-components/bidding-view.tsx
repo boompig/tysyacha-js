@@ -1,6 +1,6 @@
 import React from "react";
 import { Hand } from "../cards";
-import { Bid } from "../game-mechanics";
+import { Bid, GamePhase } from "../game-mechanics";
 import { scoreHand } from "../ai";
 import {PlayerView} from "./player-view";
 
@@ -58,15 +58,21 @@ export class BiddingView extends React.PureComponent<IBiddingViewProps, IBidding
 
     render() {
         const playerViews = this.props.playerNames.map((name: string, i: number) => {
-            return <PlayerView key={`player-${i}`}
-                name={name}
-                playerIndex={i} 
-                hand={this.props.playerHands[name]}
-                tricksTaken={[]}
-                numTricksTaken={0}
-                isDealer={i === this.props.dealerIndex}
-                isContractPlayer={false}
-                isActivePlayer={i === this.state.biddingPlayerIndex} />
+            const hand = this.props.playerHands[name];
+            return (<div key={`bid-container-${i}`}>
+                <PlayerView key={`player-${i}`}
+                    name={name}
+                    playerIndex={i}
+                    hand={hand}
+                    phase={GamePhase.BIDDING}
+                    isDealer={i === this.props.dealerIndex}
+                    tricksTaken={[]}
+                    numTricksTaken={0}
+                    isContractPlayer={false}
+                    isActivePlayer={i === this.state.biddingPlayerIndex} />
+                <div>{ hand.getPoints() } points in hand</div>
+                <div>Marriages: { hand.marriages.length > 0 ? hand.marriages.join(" ") : "none" }</div>
+            </div>);
         });
 
         return <div>

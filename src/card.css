@@ -84,6 +84,10 @@
     padding-top: 1rem;
 }
 
+.player-name {
+    font-size: 1.1rem;
+}
+
 .active-player .player-name {
     color: #696ef0;
     font-weight: bold;

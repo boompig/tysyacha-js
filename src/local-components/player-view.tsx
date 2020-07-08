@@ -1,6 +1,6 @@
 import React, { PureComponent } from "react";
 import { Card, getSuits, Hand, Suit } from "../cards";
-import { ITrickCard } from "../game-mechanics";
+import { ITrickCard, GamePhase } from "../game-mechanics";
 import { CardView } from "./card-view";
 
 interface IPlayerViewProps {
@@ -15,17 +15,18 @@ interface IPlayerViewProps {
      */
     hand: Hand;
 
+    phase: GamePhase;
+
     /**
      * true iff this is the dealing player
      */
     isDealer: boolean;
 
     /**
-     * playing phase
+     * used in playing phase
      */
     tricksTaken: ITrickCard[][];
     numTricksTaken: number;
-
     isContractPlayer: boolean;
 
     /**
@@ -77,7 +78,9 @@ export class PlayerView extends PureComponent<IPlayerViewProps, {}> {
                 { this.props.name }
                 { this.props.isDealer ? " (D)" : "" }
                 { this.props.isContractPlayer ? " (C)" : "" }
-                <span>&nbsp;({ this.props.numTricksTaken } tricks taken)</span>
+                { this.props.phase !== GamePhase.BIDDING && this.props.phase !== GamePhase.REVEAL_TREASURE ?
+                    <span>&nbsp;({ this.props.numTricksTaken } tricks taken)</span> :
+                    null }
             </div>
             <div className="player-hand">
                 { cardViews }

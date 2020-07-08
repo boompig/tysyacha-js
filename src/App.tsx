@@ -1,9 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
-import { Deck, Card, Hand } from './cards';
 import {GameView} from './game-view'
-import { OddsView } from './odds-view';
 import {GameLobby} from './lobby';
 import {readNameCookie} from './name-cookie';
 import {API, MessageType} from './api';

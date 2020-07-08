@@ -6,6 +6,7 @@ import { CardView } from "./local-components/card-view";
 import {PlayerView} from "./local-components/player-view";
 import { RoundScoringView } from "./local-components/round-scoring-view";
 import { BiddingView } from "./local-components/bidding-view";
+import { RevealTreasureView } from "./local-components/reveal-treasure-view";
 
 interface ITestRoundProps {
     playerNames: string[];
@@ -79,8 +80,9 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
         this.dealCards = this.dealCards.bind(this);
         this.onPlayCard = this.onPlayCard.bind(this);
         this.onSelectTreasureCard = this.onSelectTreasureCard.bind(this);
-        this.distributeTreasureCards = this.distributeTreasureCards.bind(this);
+        this.autoDistributeTreasure = this.autoDistributeTreasure.bind(this);
         this.handleCompleteBidding = this.handleCompleteBidding.bind(this);
+        this.handleDistributeTreasure = this.handleDistributeTreasure.bind(this);
         this.handleNextRound = this.handleNextRound.bind(this);
         this.resetRound = this.resetRound.bind(this);
     }
@@ -139,52 +141,24 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
         console.log("Autoplay has finished.");
     }
 
-    // TODO this simplifies testing by getting us into the state I want
-    componentDidMount() {
-        let contractPlayer = null as string | null;
-
-        // this.dealCards().then(() => {
-        //     console.log("cards are dealt");
-        //     // find the player with the best hand
-        //     let bestScore = 0;
-
-        //     for(let [name, hand] of Object.entries(this.state.playerHands)) {
-        //         let score = scoreHand(hand);
-        //         let numMarriages = hand.marriages.length;
-        //         console.log(`Player ${name} has hand score of ${score} (${numMarriages} marriages)`);
-        //         if(score > bestScore) {
-        //             contractPlayer = name;
-        //             bestScore = score;
-        //         }
-        //     }
-
-        //     if(!contractPlayer) {
-        //         throw new Error("unable to find a contract player");
-        //     }
-
-        //     return this.setContract(({
-        //         player: contractPlayer,
-        //         points: 100
-        //     }));
-        // }).then(() => {
-        //     console.log(`Contract is set. Contract player is ${contractPlayer}`);
-        //     // the first treasure card goes to the first unassigned player
-        //     let i = 0;
-        //     const selectedTreasureCards = {} as {[key: string]: Card};
-        //     for(let name of this.props.playerNames) {
-        //         if(name !== contractPlayer) {
-        //             selectedTreasureCards[name] = this.state.treasure[i];
-        //             i++;
-        //         }
-        //     }
-        //     return this.setState({
-        //         selectedTreasureCards: selectedTreasureCards,
-        //     });
-        // }).then(() => {
-        //     return this.distributeTreasureCards();
-        // }).then(() => {
-        //     // return this.autoPlay();
-        // });
+    /**
+     * Basically randomly distribute the treasure cards
+     */
+    async autoDistributeTreasure() {
+        // find the last card that has not been taken and assign it to this player
+        const contractPlayer = this.props.playerNames[this.state.contractPlayerIndex];
+        let i = 0;
+        const selectedTreasureCards = {} as { [key: string]: Card };
+        for (let name of this.props.playerNames) {
+            if (name !== contractPlayer) {
+                selectedTreasureCards[name] = this.state.treasure[i];
+                i++;
+            }
+        }
+        await this.setState({
+            selectedTreasureCards: selectedTreasureCards,
+        });
+        await this.handleDistributeTreasure();
     }
 
     /**
@@ -336,7 +310,7 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
         });
     }
 
-    async distributeTreasureCards() {
+    async handleDistributeTreasure() {
         const playerHands = Object.assign({}, this.state.playerHands);
         const remainingCards = this.state.treasure.slice();
         const remainingPlayers = this.props.playerNames.slice();
@@ -426,10 +400,11 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
             return <PlayerView key={`player-${i}`}
                 name={name}
                 playerIndex={i}
+                hand={this.state.playerHands[name]}
+                phase={this.state.phase}
                 isDealer={i === this.props.dealerIndex}
                 isContractPlayer={i === this.state.contractPlayerIndex}
                 isActivePlayer={i === this.state.activePlayerIndex}
-                hand={this.state.playerHands[name]}
                 tricksTaken={this.state.tricksTaken[name]}
                 onCardSelect={this.onPlayCard}
                 numTricksTaken={this.state.tricksTaken[name].length} />
@@ -450,7 +425,6 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
                 </div>;
             }
             case GamePhase.BIDDING: {
-                // TODO assign a bid for testing
                 return <BiddingView
                     playerNames={this.props.playerNames}
                     dealerIndex={this.props.dealerIndex}
@@ -458,42 +432,15 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
                     onNextPhase={this.handleCompleteBidding} />
             }
             case GamePhase.REVEAL_TREASURE: {
-                const treasureCards = this.state.treasure.map((card: Card, i: number) => {
-                    const isSelected = Object.values(this.state.selectedTreasureCards).includes(card);
-                    let targetPlayer = null;
-                    if(isSelected) {
-                        // find the corresponding player name
-                        for(let [name, otherCard] of Object.entries(this.state.selectedTreasureCards)) {
-                            if(card === otherCard) {
-                                targetPlayer = name;
-                            }
-                        }
-                    }
-                    return (<div key={`treasure-card-container-${i}`}>
-                        <CardView key={`treasure-card-${i}`}
-                            suit={card.suit}
-                            value={card.value}
-                            classNames={isSelected ? ["card-selected"] : []}
-                            onClick={(e) => this.onSelectTreasureCard(i)}></CardView>
-                        { targetPlayer ?
-                            <div className="target-player">sending to {targetPlayer}</div>
-                            : null}
-                    </div>);
-                });
-                return (<div className="table container">
-                    <div className="dealt-table">
-                        <h3>Treasure</h3>
-                        <div className="treasure-container">{treasureCards}</div>
-                        { Object.keys(this.state.selectedTreasureCards).length === 2 ?
-                            <button type="button" className="btn btn-primary btn-lg"
-                                onClick={(e) => this.distributeTreasureCards()}
-                                >Distribute Cards</button> : null }
-                        <div className="player-hands">
-                            <h3>Players</h3>
-                            {playerHands}
-                        </div>
-                    </div>
-                </div>);
+                return <RevealTreasureView
+                    playerNames={this.props.playerNames}
+                    playerHands={this.state.playerHands}
+                    dealerIndex={this.props.dealerIndex}
+                    contractPlayerIndex={this.state.contractPlayerIndex}
+                    treasure={this.state.treasure}
+                    selectedTreasureCards={this.state.selectedTreasureCards}
+                    onSelect={this.onSelectTreasureCard}
+                    onDistribute={this.handleDistributeTreasure} />;
             }
             case GamePhase.PLAYING: {
                 // playing
