@@ -4,7 +4,15 @@ import { CardValue, Suit, valueToString } from "../cards";
 interface ICardViewProps {
     suit: Suit;
     value: CardValue;
-    isSelected?: boolean;
+
+    /**
+     * Additional class names to add to this card
+     */
+    classNames?: string[];
+
+    /**
+     * If an on-click handler is specified, the card-active class is added
+     */
     onClick?: (e: React.SyntheticEvent) => any;
 }
 
@@ -28,8 +36,8 @@ export class CardView extends PureComponent<ICardViewProps, {}> {
         if(this.props.onClick) {
             classes.push("card-active");
         }
-        if(this.props.isSelected) {
-            classes.push("card-selected");
+        if(this.props.classNames) {
+            classes.push(...this.props.classNames);
         }
         return (<div className={ classes.join(" ") }
             onClick={(e) => this.props.onClick ? this.props.onClick(e) : null }>

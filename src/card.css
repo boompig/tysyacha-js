@@ -32,9 +32,10 @@
 .playing-card {
     border: 1px solid #111;
     border-radius: 3px;
+    background-color: white;
 
     font-size: 1.2rem;
-    min-height: 125px;
+    min-height: 124px;
     min-width: 85px;
     width: 85px;
     min-width: 85px;
@@ -55,6 +56,32 @@
 
 .playing-card.card-red {
     color: red;
+}
+
+.playing-card.trick-card-0 {
+    z-index: 1;
+}
+
+.playing-card.trick-card-1 {
+    z-index: 2;
+    position: relative;
+    left: 20px;
+    top: -62px;
+}
+
+.playing-card.trick-card-2 {
+    z-index: 3;
+    position: relative;
+    left: 40px;
+    top: -124px;
+}
+
+.player-tricks-taken {
+    margin-bottom: -124px;
+}
+
+.player-tricks {
+    padding-top: 1rem;
 }
 
 .active-player .player-name {

@@ -1,15 +1,16 @@
 import React, { PureComponent } from "react";
-import { scoreHand } from "./ai";
 import "./card.css";
-import { Card, CardValue, Deck, getMarriageValue, Hand, Suit } from "./cards";
-import { Bid, canPlayCard, countTrickPoints, GamePhase, getWinningCard, ITrickCard, computeRoundScores } from "./game-mechanics";
+import { Card, CardValue, Deck, Hand, Suit } from "./cards";
+import { Bid, canPlayCard, GamePhase, getWinningCard, ITrickCard } from "./game-mechanics";
 import { CardView } from "./local-components/card-view";
 import {PlayerView} from "./local-components/player-view";
+import { RoundScoringView } from "./local-components/round-scoring-view";
+import { BiddingView } from "./local-components/bidding-view";
 
 interface ITestRoundProps {
     playerNames: string[];
     dealerIndex: number;
-    onRoundOver: (scores: {[key: string]: number}) => any;
+    onRoundOver: (scores: {[key: string]: number}, isEarlyExit: boolean) => any;
 }
 
 interface ITestRoundState {
@@ -77,9 +78,11 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
 
         this.dealCards = this.dealCards.bind(this);
         this.onPlayCard = this.onPlayCard.bind(this);
-        this.setContract = this.setContract.bind(this);
         this.onSelectTreasureCard = this.onSelectTreasureCard.bind(this);
         this.distributeTreasureCards = this.distributeTreasureCards.bind(this);
+        this.handleCompleteBidding = this.handleCompleteBidding.bind(this);
+        this.handleNextRound = this.handleNextRound.bind(this);
+        this.resetRound = this.resetRound.bind(this);
     }
 
     /**
@@ -134,68 +137,54 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
             await this.onPlayCard(this.state.activePlayerIndex, cardIndex);
         }
         console.log("Autoplay has finished.");
-
-        // compute the final scores
-
-        const scores = computeRoundScores(this.props.playerNames, this.state.tricksTaken, this.state.declaredMarriages);
-        this.props.onRoundOver(scores);
     }
 
     // TODO this simplifies testing by getting us into the state I want
     componentDidMount() {
         let contractPlayer = null as string | null;
 
-        this.dealCards().then(() => {
-            console.log("cards are dealt");
-            // find the player with the best hand
-            let bestScore = 0;
+        // this.dealCards().then(() => {
+        //     console.log("cards are dealt");
+        //     // find the player with the best hand
+        //     let bestScore = 0;
 
-            for(let [name, hand] of Object.entries(this.state.playerHands)) {
-                let score = scoreHand(hand);
-                let numMarriages = hand.marriages.length;
-                console.log(`Player ${name} has hand score of ${score} (${numMarriages} marriages)`);
-                if(score > bestScore) {
-                    contractPlayer = name;
-                    bestScore = score;
-                }
-            }
+        //     for(let [name, hand] of Object.entries(this.state.playerHands)) {
+        //         let score = scoreHand(hand);
+        //         let numMarriages = hand.marriages.length;
+        //         console.log(`Player ${name} has hand score of ${score} (${numMarriages} marriages)`);
+        //         if(score > bestScore) {
+        //             contractPlayer = name;
+        //             bestScore = score;
+        //         }
+        //     }
 
-            if(!contractPlayer) {
-                throw new Error("unable to find a contract player");
-            }
+        //     if(!contractPlayer) {
+        //         throw new Error("unable to find a contract player");
+        //     }
 
-            return this.setContract(({
-                player: contractPlayer,
-                points: 100
-            }));
-        }).then(() => {
-            console.log(`Contract is set. Contract player is ${contractPlayer}`);
-            // the first treasure card goes to the first unassigned player
-            let i = 0;
-            const selectedTreasureCards = {} as {[key: string]: Card};
-            for(let name of this.props.playerNames) {
-                if(name !== contractPlayer) {
-                    selectedTreasureCards[name] = this.state.treasure[i];
-                    i++;
-                }
-            }
-            return this.setState({
-                selectedTreasureCards: selectedTreasureCards,
-            });
-        }).then(() => {
-            return this.distributeTreasureCards();
-        }).then(() => {
-            // return this.autoPlay();
-        });
-    }
-
-    async setContract(contract: Bid) {
-        const playerIndex = this.props.playerNames.indexOf(contract.player);
-        await this.setState({
-            currentContract: contract,
-            contractPlayerIndex: playerIndex,
-            phase: GamePhase.REVEAL_TREASURE,
-        });
+        //     return this.setContract(({
+        //         player: contractPlayer,
+        //         points: 100
+        //     }));
+        // }).then(() => {
+        //     console.log(`Contract is set. Contract player is ${contractPlayer}`);
+        //     // the first treasure card goes to the first unassigned player
+        //     let i = 0;
+        //     const selectedTreasureCards = {} as {[key: string]: Card};
+        //     for(let name of this.props.playerNames) {
+        //         if(name !== contractPlayer) {
+        //             selectedTreasureCards[name] = this.state.treasure[i];
+        //             i++;
+        //         }
+        //     }
+        //     return this.setState({
+        //         selectedTreasureCards: selectedTreasureCards,
+        //     });
+        // }).then(() => {
+        //     return this.distributeTreasureCards();
+        // }).then(() => {
+        //     // return this.autoPlay();
+        // });
     }
 
     /**
@@ -306,6 +295,7 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
             phase: GamePhase.BIDDING,
             playerHands: playerHands,
         });
+        console.log("cards have been dealt");
     }
 
     onSelectTreasureCard(cardIndex: number) {
@@ -383,13 +373,61 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
         });
     }
 
+    resetRound() {
+        const tricksTaken = Object.fromEntries(this.props.playerNames.map((name: string) => {
+            return [name, []];
+        }));
+
+        this.setState({
+            // general info
+            phase: GamePhase.NOT_DEALT,
+            // dealing
+            treasure: [],
+            playerHands: {},
+
+            // bidding
+            currentContract: null,
+            contractPlayerIndex: -1,
+
+            // treasure distribution
+            selectedTreasureCards: {},
+            isBigHand: false,
+
+            // playing
+            activePlayerIndex: -1,
+            currentTrick: [],
+            trumpSuit: null,
+            tricksTaken: tricksTaken,
+            trickNumber: 0,
+            declaredMarriages: {},
+        });
+    }
+
+    handleCompleteBidding(winningBid: Bid | null) {
+        if(winningBid) {
+            const i = this.props.playerNames.indexOf(winningBid.player);
+            this.setState({
+                currentContract: winningBid,
+                contractPlayerIndex: i,
+                phase: GamePhase.REVEAL_TREASURE,
+            });
+        } else {
+            this.props.onRoundOver({}, true);
+        }
+    }
+
+    handleNextRound(scores: {[key: string]: number}) {
+        this.props.onRoundOver(scores, false);
+        this.resetRound()
+    }
+
     render() {
         const playerHands = this.props.playerNames.map((name: string, i: number) => {
             return <PlayerView key={`player-${i}`}
                 name={name}
                 playerIndex={i}
                 isDealer={i === this.props.dealerIndex}
-                isBidder={i === this.state.contractPlayerIndex}
+                isContractPlayer={i === this.state.contractPlayerIndex}
                 isActivePlayer={i === this.state.activePlayerIndex}
                 hand={this.state.playerHands[name]}
                 tricksTaken={this.state.tricksTaken[name]}
@@ -407,15 +445,17 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
             case GamePhase.NOT_DEALT: {
                 return <div>
                     <div>{ this.props.playerNames[this.props.dealerIndex] } is dealing</div>
-                    <button type="button" className="btn btn-success btn-lg"
+                    <button type="button" className="btn btn-primary btn-lg"
                         onClick={this.dealCards}>Deal</button>
                 </div>;
             }
             case GamePhase.BIDDING: {
-                // assign a bid
-                return <div>
-                    <button type="button">Assign Bid</button>
-                </div>;
+                // TODO assign a bid for testing
+                return <BiddingView
+                    playerNames={this.props.playerNames}
+                    dealerIndex={this.props.dealerIndex}
+                    playerHands={this.state.playerHands}
+                    onNextPhase={this.handleCompleteBidding} />
             }
             case GamePhase.REVEAL_TREASURE: {
                 const treasureCards = this.state.treasure.map((card: Card, i: number) => {
@@ -433,7 +473,7 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
                         <CardView key={`treasure-card-${i}`}
                             suit={card.suit}
                             value={card.value}
-                            isSelected={isSelected}
+                            classNames={isSelected ? ["card-selected"] : []}
                             onClick={(e) => this.onSelectTreasureCard(i)}></CardView>
                         { targetPlayer ?
                             <div className="target-player">sending to {targetPlayer}</div>
@@ -488,55 +528,13 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
                 if(!this.state.currentContract) {
                     throw new Error("there must be a contract in this pahse");
                 }
-
-                // calculate final points
-                const finalPoints = computeRoundScores(this.props.playerNames, this.state.tricksTaken, this.state.declaredMarriages);
-                // did the contract player succeed
-                const contractPlayer = this.props.playerNames[this.state.contractPlayerIndex];
-                const isContractMade = finalPoints[contractPlayer] >= this.state.currentContract.points;
-
-                // show the tricks
-                const playerTricks = this.props.playerNames.map((name: string, playerIndex: number) => {
-                    const tricksTaken = this.state.tricksTaken[name];
-                    const tricks = tricksTaken.map((trick: ITrickCard[], trickIndex: number) => {
-                        const cards = trick.map((tc: ITrickCard, cardIndex: number) => {
-                            return <CardView key={`player-${playerIndex}-tricks-taken-${trickIndex}-card-${cardIndex}`}
-                                suit={tc.card.suit}
-                                value={tc.card.value} />;
-                        });
-                        return <div className="trick-taken" key={`player-${playerIndex}-tricks-taken-${trickIndex}`}>
-                            {cards}
-                        </div>
-                    });
-                    const numMarriages = name in this.state.declaredMarriages ? this.state.declaredMarriages[name].length : 0;
-                    const marriages = numMarriages > 0 ? this.state.declaredMarriages[name].join(" ") : "";
-                    return <div className="player-tricks-taken-container" key={`player-${playerIndex}-tricks-taken-container`}>
-                        <h4>{name}</h4>
-                        { tricks.length > 0 ?
-                            <div>
-                                <div>{tricks.length} tricks taken - {finalPoints[name]} points</div>
-                                <div>{numMarriages} marriages declared
-                                    { numMarriages > 0 ? ": " + marriages : null }</div>
-                                <div className="player-tricks-taken">
-                                    {tricks}
-                                </div>
-                            </div> :
-                            <div>no tricks taken - 0 points</div> }
-                    </div>;
-                });
-
-                return (<div className="table container">
-                    <div className="game-status">
-                        <h3>Status</h3>
-                        <div>{this.state.currentContract.player} holds contract for {this.state.currentContract.points} points</div>
-                        <div>{ isContractMade ? `${this.state.currentContract.player} met the contract` :
-                            `${this.state.currentContract.player} failed to meet the contract` }</div>
-                    </div>
-                    <div className="player-tricks">
-                        <h3>Taken Tricks</h3>
-                        {playerTricks}
-                    </div>
-                </div>);
+                return <RoundScoringView
+                    contract={this.state.currentContract}
+                    contractPlayerIndex={this.state.contractPlayerIndex}
+                    tricksTaken={this.state.tricksTaken}
+                    declaredMarriages={this.state.declaredMarriages}
+                    playerNames={this.props.playerNames}
+                    onFinish={this.handleNextRound} />
             }
             default:
                 return <div>no view for phase {this.state.phase}</div>;

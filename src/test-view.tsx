@@ -1,5 +1,6 @@
 import React, { PureComponent } from "react";
 import { TestRoundView } from "./test-round-view";
+import ScoreView from "./score-view";
 
 interface ITestProps {}
 
@@ -44,23 +45,30 @@ export class TestView extends PureComponent<ITestProps, ITestState> {
         this.onRoundOver = this.onRoundOver.bind(this);
     }
 
-    onRoundOver(scores: {[key: string]: number}) {
-        const newScores = Object.assign({}, this.state.scores);
-        for(let [name, pts] of Object.entries(scores)) {
-            newScores[name] += pts;
+    onRoundOver(scores: {[key: string]: number}, isEarlyExit: boolean) {
+        if(!isEarlyExit) {
+            const newScores = Object.assign({}, this.state.scores);
+            for(let [name, pts] of Object.entries(scores)) {
+                newScores[name] += pts;
+            }
+            this.setState({
+                scores: newScores,
+                round: this.state.round + 1,
+                dealerIndex: (this.state.dealerIndex + 1) % 3,
+            });
         }
-        this.setState({
-            scores: newScores,
-            round: this.state.round + 1,
-            dealerIndex: (this.state.dealerIndex + 1) % 3,
-        });
-
     }
 
     render() {
-        return <TestRoundView
-            playerNames={this.state.playerNames}
-            dealerIndex={this.state.dealerIndex}
-            onRoundOver={this.onRoundOver} />
+        return (<main className="container">
+            <ScoreView
+                playerNames={this.state.playerNames}
+                scores={this.state.scores}
+                />
+            <TestRoundView
+                playerNames={this.state.playerNames}
+                dealerIndex={this.state.dealerIndex}
+                onRoundOver={this.onRoundOver} />
+        </main>);
     }
 }
