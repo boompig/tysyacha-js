@@ -151,7 +151,7 @@ export class Hand {
             cardsBySuit[card.suit].push(card);
         });
 
-        for(let [suit, cards] of Object.entries(cardsBySuit)) {
+        for(let cards of Object.values(cardsBySuit)) {
             // cards within a suit should be sorted by VALUE (descending)
             (cards as Card[]).sort((a: Card, b: Card) => {
                 return b.value - a.value;
@@ -179,7 +179,7 @@ export class Hand {
      */
     getPoints(): number {
         let pts = 0;
-        for(let [suit, cards] of Object.entries(this.cardsBySuit)) {
+        for(let cards of Object.values(this.cardsBySuit)) {
             pts += (cards as Card[]).reduce((acc: number, cur: Card) => {
                 return acc + cur.value;
             }, 0);
