@@ -2,6 +2,8 @@ import { WEBSOCKET_SERVER, HTTP_SERVER } from './constants';
 import { Bid, GamePhase, ITrickCard, IPastTrick } from './game-mechanics';
 import { Card, ICard, Suit } from './cards';
 
+// TODO this is not at all secure
+export const ADMIN_API_KEY = "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447";
 
 // async function importWebsocketInNode() {
 //     const IS_BROWSER = (typeof window !== "undefined");
@@ -135,6 +137,28 @@ export interface ICreateGameResponse {
     gameId: string;
 }
 
+export interface IAdminResponse {
+    games: string[];
+}
+
+export interface IGameInfo {
+    creator: string;
+    round: number;
+    hasStarted: boolean;
+}
+
+export interface IRoundInfo {
+    phase: GamePhase;
+    dealer: string;
+}
+
+export interface IAdminGameResponse {
+    playerNames: string[];
+    rounds: number[];
+    gameInfo: IGameInfo;
+    roundInfo: {[key: number]: IRoundInfo}
+}
+
 export class API {
     socket: WebSocket;
 
@@ -179,7 +203,7 @@ export class API {
 
     async getGameUsers(gameId: string): Promise<string[]> {
         const r = await this.getJSON(`/game/${gameId}/users`);
-        if(r.ok) {
+        if (r.ok) {
             const j = await r.json();
             return j;
         } else {
@@ -188,8 +212,8 @@ export class API {
         }
     }
 
-    async getPlayerCards(gameId: string, name: string): Promise<any> {
-        const r = await this.getJSON(`/game/${gameId}/cards`, {
+    async getPlayerCards(gameId: string, round: number, name: string): Promise<any> {
+        const r = await this.getJSON(`/game/${gameId}/round/${round}/cards`, {
             username: name
         });
         if(r.ok) {
@@ -315,6 +339,36 @@ export class API {
         const j = await r.json();
         return j as ICreateGameResponse;
     }
+
+    /** ******** Admin APIs *********** */
+
+    async adminGetGames(): Promise<IAdminResponse> {
+        const r = await this.getJSON('/admin', {
+            API_KEY: ADMIN_API_KEY,
+        });
+        if (r.ok) {
+            const j = await r.json();
+            return j as IAdminResponse;
+        } else {
+            console.error(r);
+            throw new Error(await r.text());
+        }
+    }
+
+    async adminGetGameInfo(gameId: string): Promise<IAdminGameResponse> {
+        const r = await this.getJSON(`/admin/game/${gameId}`, {
+            API_KEY: ADMIN_API_KEY,
+        });
+        if (r.ok) {
+            const j = await r.json();
+            return j as IAdminGameResponse;
+        } else {
+            console.error(r);
+            throw new Error(await r.text());
+        }
+    }
+
+    /** ************* WebSocket stuff ************* */
 
     /**
      * Send a websocket message

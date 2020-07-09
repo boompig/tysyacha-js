@@ -9,6 +9,34 @@ export enum GamePhase {
     SCORING = 5,
 }
 
+export function gamePhaseToString(phase: GamePhase): string {
+    switch (phase) {
+        case GamePhase.NOT_DEALT:
+            return "NOT_DEALT";
+        case GamePhase.BIDDING:
+            return "BIDDING";
+        case GamePhase.REVEAL_TREASURE:
+            return "REVEAL_TREASURE";
+        case GamePhase.DISTRIBUTE_CARDS:
+            return "DISTRIBUTE_CARDS";
+        case GamePhase.PLAYING:
+            return "PLAYING";
+        case GamePhase.SCORING:
+            return "SCORING";
+    }
+}
+
+export function getGamePhases(): GamePhase[] {
+    return [
+        GamePhase.NOT_DEALT,
+        GamePhase.BIDDING,
+        GamePhase.REVEAL_TREASURE,
+        GamePhase.DISTRIBUTE_CARDS,
+        GamePhase.PLAYING,
+        GamePhase.SCORING,
+    ];
+}
+
 /**
  * A bid of 0 -> pass
  */

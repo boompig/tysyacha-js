@@ -49,7 +49,7 @@ export function RoundView(props: IRoundViewProps) {
     const [finalContract, setFinalContract] = useState(null as Bid | null);
 
     const getPlayerCards = useCallback(async function getPlayerCards() {
-        const playerHand = await props.api.getPlayerCards(props.gameId, props.name);
+        const playerHand = await props.api.getPlayerCards(props.gameId, props.round, props.name);
         console.log('Got cards:');
         console.log(playerHand);
 
@@ -59,7 +59,7 @@ export function RoundView(props: IRoundViewProps) {
 
         const hand = new Hand(cards);
         setHand(hand);
-    }, [props.gameId, props.name, props.api]);
+    }, [props.gameId, props.round, props.name, props.api]);
 
     useEffect(() => {
         async function getRoundInfo() {
