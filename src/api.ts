@@ -2,9 +2,20 @@ import { WEBSOCKET_SERVER, HTTP_SERVER } from './constants';
 import { Bid, GamePhase, ITrickCard, IPastTrick } from './game-mechanics';
 import { Card, ICard, Suit } from './cards';
 
-if(typeof WebSocket === "undefined") {
-    var WebSocket = require("ws");
-}
+
+// async function importWebsocketInNode() {
+//     const IS_BROWSER = (typeof window !== "undefined");
+//     if(typeof WebSocket === "undefined" && !IS_BROWSER) {
+//         console.debug("Loading websocket module outside of browser");
+//         var WebSocket = await import("ws");
+//     } else {
+//         console.log("Using native websocket object");
+//         console.log(WebSocket);
+//     }
+// }
+
+// importWebsocketInNode();
+
 
 if(typeof fetch === "undefined" && process.env.IS_SERVER !== "1") {
     var fetch = require("node-fetch");
@@ -28,11 +39,6 @@ export enum MessageType {
      * Retrieve a list of users in the lounge
      */
     LOUNGE_USERS = 'lounge-users',
-
-    /**
-     * Create a game. Request a gameId from server.
-     */
-    CREATE_GAME = 'create-game',
 
     /**
      * Request game seeds for each user in a game.
@@ -123,6 +129,10 @@ export interface IPlayingPhaseInfo {
 export interface IBidsResponse {
     bidHistory: Bid[];
     nextPhase: GamePhase;
+}
+
+export interface ICreateGameResponse {
+    gameId: string;
 }
 
 export class API {
@@ -290,11 +300,20 @@ export class API {
         }
     }
 
-    async postJoinLounge(username: string): Promise<Response> {
-        const r = await this.postJSON(`/lounge/join`, {
+    async joinLounge(username: string, isHeartbeat: boolean): Promise<Response> {
+        const r = await this.postJSON('/lounge/join', {
             username,
+            isHeartbeat,
         });
         return r;
+    }
+
+    async createGame(username: string): Promise<ICreateGameResponse> {
+        const r = await this.postJSON('/game/new', {
+            username,
+        });
+        const j = await r.json();
+        return j as ICreateGameResponse;
     }
 
     /**

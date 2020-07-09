@@ -2,9 +2,9 @@ import React, {useState, useEffect} from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './lounge.css'
 import {readNameCookie, setNameCookie} from '../name-cookie';
-import { WEBSOCKET_SERVER } from '../constants';
+import { MessageType, API, ICreateGameResponse } from '../api';
 
-const socket = new WebSocket(WEBSOCKET_SERVER);
+const api = new API();
 
 interface INameProps {
     onNameSet(name: string): void;
@@ -47,15 +47,17 @@ function LoungeNameForm(props: INameProps) {
 }
 
 interface ICreateGameProps {
+    username: string;
     gameId: string | null;
+    onGameCreated: (gameId: string) => any;
 }
 
 function CreateGameView(props: ICreateGameProps) {
     useEffect(() => {
         if(!props.gameId) {
-            socket.send(JSON.stringify({
-                msgType: 'create-game'
-            }));
+            api.createGame(props.username).then((createGameData: ICreateGameResponse) => {
+                props.onGameCreated(createGameData.gameId);
+            });
         }
     }, [props]);
 
@@ -109,17 +111,13 @@ function JoinGameView(props: IJoinGameViewProps) {
     </div>
 }
 
-function joinLounge(name: string, isHeartbeat: boolean) {
-    socket.send(JSON.stringify({
-        msgType: 'join-lounge',
-        username: name,
-        isHeartbeat: isHeartbeat,
-    }));
+async function joinLounge(username: string, isHeartbeat: boolean) {
+    await api.joinLounge(username, isHeartbeat);
 }
 
 function leaveLounge(name: string) {
-    socket.send(JSON.stringify({
-        msgType: 'leave-lounge',
+    api.socket.send(JSON.stringify({
+        msgType: MessageType.LEAVE_LOUNGE,
         username: name
     }));
 }
@@ -149,12 +147,13 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
         this.handleNameSet = this.handleNameSet.bind(this);
         this.onWebSocketMessage = this.onWebSocketMessage.bind(this);
         this.showCreateGame = this.showCreateGame.bind(this);
+        this.handleGameCreated = this.handleGameCreated.bind(this);
     }
 
     componentDidMount() {
         document.title = 'Tysyacha Lounge';
-        socket.onmessage = this.onWebSocketMessage;
-        socket.onopen = (event: Event) => {
+        api.socket.onmessage = this.onWebSocketMessage;
+        api.socket.onopen = (event: Event) => {
             console.log('socket opened');
             // once connected, request users
             if(this.state.name) {
@@ -170,23 +169,24 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
         };
     }
 
+    handleGameCreated(gameId: string) {
+        this.setState({
+            newGameId: gameId,
+        });
+    }
+
     onWebSocketMessage(event: MessageEvent) {
         console.log('Received message over websocket:');
         if(event.data) {
             const j = JSON.parse(event.data);
             console.log(j);
             switch(j.msgType) {
-                case 'lounge-users':
+                case MessageType.LOUNGE_USERS:
                     this.setState({
                         loungeUsers: j.users
                     });
                     break;
-                case 'create-game':
-                    this.setState({
-                        newGameId: j.gameId,
-                    });
-                    break;
-                case 'game-users':
+                case MessageType.GAME_USERS:
                     // ignore this message type
                     break;
                 default:
@@ -220,9 +220,12 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
     }
 
     render(): JSX.Element {
-        if(this.state.showGameCreation) {
+        if(this.state.showGameCreation && this.state.name) {
             return (<main className='container'>
-                <CreateGameView gameId={this.state.newGameId}/>
+                <CreateGameView
+                    gameId={this.state.newGameId}
+                    username={this.state.name}
+                    onGameCreated={this.handleGameCreated} />
             </main>);
         } else if(this.state.showGameJoin && this.state.name) {
             return (<main className='container'>
