@@ -19,14 +19,14 @@ export class NoneSelectedView extends React.PureComponent<INoneProps, INoneState
     }
 
     handleSelectGame(e: React.SyntheticEvent, gameId: string) {
-        e.preventDefault();
-        this.props.onSelectGame(gameId);
+        // e.preventDefault();
+        // this.props.onSelectGame(gameId);
     }
 
     render() {
         const gameLinks = this.props.games.map((gameId) => {
             return <li key={`game-link-${gameId}`}>
-                <a href={`/server/${gameId}`}
+                <a href={`/server?game=${gameId}`}
                     onClick={(e) => this.handleSelectGame(e, gameId)}>{ gameId }</a>
             </li>
         });

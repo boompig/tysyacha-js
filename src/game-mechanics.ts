@@ -200,3 +200,10 @@ export function computeRoundScores(playerNames: string[], tricksTaken: {[key: st
     });
     return finalPoints;
 }
+
+export type TCards = {[key: string]: Hand};
+
+export interface IDeal {
+    playerCards: TCards;
+    treasure: Card[];
+}

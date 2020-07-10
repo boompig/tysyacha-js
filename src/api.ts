@@ -1,6 +1,6 @@
 import { WEBSOCKET_SERVER, HTTP_SERVER } from './constants';
-import { Bid, GamePhase, ITrickCard, IPastTrick } from './game-mechanics';
-import { Card, ICard, Suit } from './cards';
+import { Bid, GamePhase, ITrickCard, IPastTrick, IDeal } from './game-mechanics';
+import { Card, ICard, Suit, Hand } from './cards';
 
 // TODO this is not at all secure
 export const ADMIN_API_KEY = "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447";
@@ -149,7 +149,15 @@ export interface IGameInfo {
 
 export interface IRoundInfo {
     phase: GamePhase;
+    /**
+     * Name of the player who has dealt/will deal the cards
+     */
     dealer: string;
+    /**
+     * Name of the player whose turn it is to bid
+     * This has no meaning in rounds after BIDDING
+     */
+    biddingPlayer: string;
 }
 
 export interface IAdminGameResponse {
@@ -157,6 +165,7 @@ export interface IAdminGameResponse {
     rounds: number[];
     gameInfo: IGameInfo;
     roundInfo: {[key: number]: IRoundInfo}
+    cardsPerRound: {[key: number]: IDeal};
 }
 
 export class API {
@@ -249,7 +258,10 @@ export class API {
         }
     }
 
-    async getBids(gameId: string, round: number, playerNames: string[]): Promise<IBidsResponse> {
+    /**
+     * Get the entire bidding history
+     */
+    async getBids(gameId: string, round: number): Promise<IBidsResponse> {
         const r = await this.getJSON(`/game/${gameId}/round/${round}/bids`);
         if(r.ok) {
             const j = await r.json();
@@ -360,8 +372,29 @@ export class API {
             API_KEY: ADMIN_API_KEY,
         });
         if (r.ok) {
-            const j = await r.json();
-            return j as IAdminGameResponse;
+            const j = (await r.json()) as IAdminGameResponse;
+
+            // for the cards, recreate card objects
+            const rounds = Object.keys(j.cardsPerRound).map((n) => Number.parseInt(n, 10));
+            rounds.forEach((round: number) => {
+                // player cards
+                const playerCards = {} as {[key: string]: Hand};
+                Object.keys(j.cardsPerRound[round].playerCards).forEach((name: string) => {
+                    const cards = j.cardsPerRound[round].playerCards[name].cards.map((card: ICard) => {
+                        return new Card(card.value, card.suit);
+                    });
+                    playerCards[name] = new Hand(cards);
+                });
+
+                // treasure cards
+                const treasureCards = j.cardsPerRound[round].treasure.map((card: ICard) => {
+                    return new Card(card.value, card.suit);
+                });
+                j.cardsPerRound[round].treasure = treasureCards;
+                j.cardsPerRound[round].playerCards = playerCards;
+            });
+
+            return j;
         } else {
             console.error(r);
             throw new Error(await r.text());

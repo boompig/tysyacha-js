@@ -17,6 +17,11 @@ main {
 	padding-right: .5rem;
 }
 
+.player-name.active-player {
+	font-weight: bold;
+	color: #0c82c7;
+}
+
 .player-cards-suit {
 	padding-right: .5rem;
 }
@@ -31,4 +36,8 @@ header .game-id {
 
 .round-view {
 	padding-top: 1rem;
+}
+
+.bid-history-container .highest-bid {
+	margin-bottom: .5rem;
 }

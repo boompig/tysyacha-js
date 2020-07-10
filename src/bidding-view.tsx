@@ -4,6 +4,42 @@ import {PlayerView} from './player-view';
 import { Hand } from './cards';
 import { GamePhase, Bid, getWinningBid } from './game-mechanics';
 
+interface IBiddingHistoryViewProps {
+    bids: Bid[];
+}
+
+export class BiddingHistoryView extends React.PureComponent<IBiddingHistoryViewProps, {}> {
+    render() {
+        const highestBid = getWinningBid(this.props.bids);
+        const bidRows = this.props.bids.map((bid: Bid, i: number) => {
+            return <tr key={`}bid-row-${i}`}>
+                <td>{bid.player}</td>
+                <td>{bid.points === 0 ? 'pass' : bid.points }</td>
+            </tr>
+        });
+
+        return (<div className="bid-history-container">
+            <h2>Bids</h2>
+            { highestBid === null ? null :
+                <div className="highest-bid">Highest bid: { highestBid.points }&nbsp;({highestBid.player})</div> }
+
+            { this.props.bids.length === 0 ?
+                <div>no bids yet</div> :
+                <table className='table table-striped table-sm'>
+                    <thead>
+                        <tr>
+                            <th>Player</th>
+                            <th>Bid</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        { bidRows }
+                    </tbody>
+                </table>
+            }
+        </div>);
+    }
+}
 
 interface IProps {
     name: string;
@@ -99,7 +135,7 @@ export function BiddingView(props: IProps) {
             setSubscribed(true);
         }
         if(!fetchedBiddingHistory) {
-            props.api.getBids(props.gameId, props.round, props.playerNames).then((response: IBidsResponse) => {
+            props.api.getBids(props.gameId, props.round).then((response: IBidsResponse) => {
                 if(response.bidHistory.length > 0) {
                     const lastBidder = response.bidHistory[response.bidHistory.length - 1].player;
                     updateBidHistory(response.bidHistory, lastBidder, response.nextPhase);
@@ -138,13 +174,6 @@ export function BiddingView(props: IProps) {
         setBidPoints(Number.parseInt(pts));
     }
 
-    const bidRows = bids.map((bid: Bid, i: number) => {
-        return <tr key={`}bid-row-${i}`}>
-            <td>{bid.player}</td>
-            <td>{bid.points === 0 ? 'pass' : bid.points }</td>
-        </tr>
-    });
-
     return (<div className='bidding-view'>
         <h3>Bidding</h3>
 
@@ -154,20 +183,10 @@ export function BiddingView(props: IProps) {
             { biddingPlayer === props.playerIndex ? <span>&nbsp;(you)</span> :
                 null}
         </div>
-        <div>Highest bid: { highestBid }</div>
 
-        {bids.length === 0 ? <span>no bids yet</span> :
-            <table className='table table-striped table-sm'>
-                <thead>
-                    <tr>
-                        <th>Player</th>
-                        <th>Bid</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    { bidRows }
-                </tbody>
-            </table>}
+        <BiddingHistoryView
+            bids={bids} />
+
         <h3>Your Cards</h3>
         <div className='player-cards-view'>
             <PlayerView

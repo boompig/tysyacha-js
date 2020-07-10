@@ -3,38 +3,111 @@ import { IGameInfo } from "../api";
 
 interface IPlayerProps {
     playerNames: string[];
+    /**
+     * Whether to initially render the component as collapsed or not
+     */
+    isCollapsed?: boolean;
 }
 
-export class AdminPlayerView extends React.PureComponent<IPlayerProps, {}> {
+interface IPlayerState {
+    isCollapsed: boolean;
+}
+
+export class AdminPlayerView extends React.PureComponent<IPlayerProps, IPlayerState> {
+    constructor(props: IPlayerProps) {
+        super(props);
+        const isCollapsed = typeof props.isCollapsed === "undefined" ? false : props.isCollapsed;
+        this.state = {
+            isCollapsed: isCollapsed,
+        };
+        this.toggleCollapse = this.toggleCollapse.bind(this);
+    }
+
+    toggleCollapse(e: React.SyntheticEvent) {
+        e.preventDefault();
+        this.setState({
+            isCollapsed: !this.state.isCollapsed,
+        });
+    }
+
     render() {
         const players = this.props.playerNames.map((player: string, i: number) => {
             return <li key={`player=${i}`}>{ player }</li>
         });
         return (<div className="admin-player-container">
-            <h2>Players</h2>
+            <h2>
+                <a href="#player-container-collapse" role="button" data-toggle="collapse" data-target="#player-container-collapse"
+                    aria-expanded={ !this.state.isCollapsed } aria-controls="player-container-collapse"
+                    onClick={(e) => this.toggleCollapse(e)}>
+                    <span>Players</span>
+                    { this.state.isCollapsed ? <span>&nbsp;(collapsed)</span> : null }
+                </a>
+            </h2>
 
-            {this.props.playerNames.length > 0 ?
-                <ol>
-                    {players}
-                </ol> :
-                <div>no players registered</div>}
-
+            { this.state.isCollapsed ?
+                null :
+                <div id="player-container-collapse">
+                    {this.props.playerNames.length > 0 ?
+                        <ol>
+                            {players}
+                        </ol> :
+                        <div>no players registered</div>}
+                </div> }
         </div>);
     }
 }
 
 interface IGameInfoProps {
     gameInfo: IGameInfo;
+    /**
+     * Whether to initially render the component as collapsed or not
+     */
+    isCollapsed?: boolean;
 }
 
-export class GameInfoView extends React.PureComponent<IGameInfoProps, {}> {
+interface IGameInfoState {
+    isCollapsed: boolean;
+}
+
+export class GameInfoView extends React.PureComponent<IGameInfoProps, IGameInfoState> {
+    constructor(props: IGameInfoProps) {
+        super(props);
+
+        const isCollapsed = typeof props.isCollapsed === "undefined" ? false : props.isCollapsed;
+        this.state = {
+            isCollapsed: isCollapsed,
+        };
+
+        this.toggleCollapse = this.toggleCollapse.bind(this);
+    }
+
+    toggleCollapse(e: React.SyntheticEvent) {
+        e.preventDefault();
+        this.setState({
+            isCollapsed: !(this.state.isCollapsed),
+        });
+    }
+
     render() {
         return (<div className="admin-game-info-container">
-            <h2>Game Info</h2>
+            <div id="game-info-header">
+                <h2>
+                    <a href="#game-info-collapse" role="button" data-toggle="collapse" data-target="#game-info-collapse"
+                        aria-expanded={ this.state.isCollapsed } aria-controls="game-info-collapse"
+                        onClick={(e) => this.toggleCollapse(e)}>
+                            <span>Game Info</span>
+                            { this.state.isCollapsed ? <span>&nbsp;(collapsed)</span> : null }
+                    </a>
+                </h2>
+            </div>
 
-            <div>Round - {this.props.gameInfo.round} </div>
-            <div>Creator - {this.props.gameInfo.creator} </div>
-            <div>Has Started? - {this.props.gameInfo.hasStarted ? 'true' : 'false'} </div>
+            { this.state.isCollapsed ?
+                null :
+                <div id="game-info-collapse" aria-labelledby="game-info-header">
+                    <div>Round - {this.props.gameInfo.round} </div>
+                    <div>Game Creator - {this.props.gameInfo.creator} </div>
+                    <div>Has Started? - {this.props.gameInfo.hasStarted ? 'yes' : 'no'} </div>
+                </div> }
         </div>);
     }
 }
@@ -57,15 +130,14 @@ export class GameView extends React.PureComponent<IProps, IState> {
     }
 
     handleSelectRound(e: React.SyntheticEvent, round: number) {
-        e.preventDefault();
-        this.props.onSelectRound(round);
+        // e.preventDefault();
+        // this.props.onSelectRound(round);
     }
-
 
     render() {
         const rounds = this.props.rounds.map((round: number) => {
             return <li key={`round-${round}`}>
-                <a href={`/game/${this.props.gameId}/round/${round}`}
+                <a href={`/server?game=${this.props.gameId}&round=${round}`}
                     onClick={(e) => this.handleSelectRound(e, round)}>Round {round}</a>
             </li>;
         });
