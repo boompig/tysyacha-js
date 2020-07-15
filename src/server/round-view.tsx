@@ -1,12 +1,13 @@
 import React from "react";
 import {AdminPlayerView, GameInfoView} from "./game-view";
 import {IGameInfo, IRoundInfo, IPlayingPhaseInfo} from "../api";
-import { gamePhaseToString, IDeal, GamePhase, Bid, getWinningBid } from "../game-mechanics";
+import { gamePhaseToString, IDeal, GamePhase, Bid, getWinningBid, groupTricksByPlayer } from "../game-mechanics";
 import { Card } from "../cards";
 import { PlayerView } from "../player-view";
 import { BiddingHistoryView } from "../bidding-view";
 import { CurrentTrickView } from "../playing-view";
 import {PastTricksView} from "./past-tricks-view";
+import { RoundScoringView } from "../local-components/round-scoring-view";
 
 interface IProps {
     roundInfo: IRoundInfo;
@@ -119,23 +120,45 @@ export class RoundView extends React.PureComponent<IRoundViewProps, IRoundViewSt
     }
 
     render() {
-        const treasureCards = this.props.cards.treasure.map((card: Card, i: number) => {
-            return <span key={`treasure-${i}`}>
-                { card.toString() }
-            </span>
-        });
+        let treasureCards = null;
+        if (this.props.roundInfo && this.props.roundInfo.phase > GamePhase.NOT_DEALT) {
+            treasureCards = this.props.cards.treasure.map((card: Card, i: number) => {
+                return <span key={`treasure-${i}`}>
+                    { card.toString() }
+                </span>
+            });
+        }
 
-        const players = this.props.playerNames.map((name: string, i: number) => {
-            const playerClass = this.isActivePlayer(name) ? "active-player" : "";
+        let contractPlayerIndex = -1;
+        if(this.props.roundInfo && this.props.roundInfo.finalContract) {
+            contractPlayerIndex = this.props.playerNames.indexOf(this.props.roundInfo.finalContract.player);
+        }
 
-            return (<div key={`player-${i}-container`}>
-                <h5 className={ "player-name " + playerClass }>{name}</h5>
-                <PlayerView key={`player-${i}`}
-                    index={i}
-                    cards={this.props.cards.playerCards[name]}
-                    phase={this.props.roundInfo.phase} />
-            </div>);
-        });
+        let players = null;
+        if (this.props.roundInfo && this.props.roundInfo.phase > GamePhase.NOT_DEALT) {
+            players = this.props.playerNames.map((name: string, i: number) => {
+                const playerClass = this.isActivePlayer(name) ? "active-player" : "";
+
+                return (<div key={`player-${i}-container`}>
+                    <h5 className={ "player-name " + playerClass }>{name}</h5>
+                    <PlayerView key={`player-${i}`}
+                        index={i}
+                        cards={this.props.cards.playerCards[name]}
+                        phase={this.props.roundInfo.phase} />
+                </div>);
+            });
+        }
+
+        let roundScoringView = null;
+        if (this.props.roundInfo.phase === GamePhase.SCORING && this.props.roundInfo.finalContract && this.props.playingPhaseInfo) {
+            const tricksPerPlayer = groupTricksByPlayer(this.props.playerNames, this.props.playingPhaseInfo.pastTricks);
+            roundScoringView = <RoundScoringView
+                    contract={this.props.roundInfo.finalContract}
+                    contractPlayerIndex={contractPlayerIndex}
+                    playerNames={this.props.playerNames}
+                    tricksTaken={tricksPerPlayer}
+                    declaredMarriages={this.props.playingPhaseInfo.declaredMarriages} />;
+        }
 
         return (<div>
             <h1 className="title">Game { this.props.gameId } - Round { this.props.round }</h1>
@@ -152,30 +175,34 @@ export class RoundView extends React.PureComponent<IRoundViewProps, IRoundViewSt
                 round={this.props.round}
                 playingPhaseInfo={this.props.playingPhaseInfo}/>
 
-            <BiddingHistoryView
-                bids={this.props.bidHistory} />
+            { this.props.roundInfo.phase > GamePhase.NOT_DEALT ?
+                <BiddingHistoryView
+                    bids={this.props.bidHistory} /> : null }
 
-            {this.props.playingPhaseInfo ?
+            {this.props.playingPhaseInfo && this.props.roundInfo.phase >= GamePhase.PLAYING && this.props.roundInfo.phase < GamePhase.SCORING ?
                 <PastTricksView
-                    pastTricks={this.props.playingPhaseInfo?.pastTricks} /> :
+                    pastTricks={this.props.playingPhaseInfo.pastTricks} /> :
                 null }
 
-            { this.props.playingPhaseInfo ?
+            { this.props.playingPhaseInfo && this.props.roundInfo.phase >= GamePhase.PLAYING && this.props.roundInfo.phase < GamePhase.SCORING ?
                 <CurrentTrickView
                     currentTrick={this.props.playingPhaseInfo.currentTrick} /> :
                 null }
 
-            { this.props.roundInfo.phase <= GamePhase.DISTRIBUTE_CARDS ?
+            { this.props.roundInfo.phase > GamePhase.NOT_DEALT && this.props.roundInfo.phase <= GamePhase.DISTRIBUTE_CARDS ?
                 <div className="admin-treasure-container">
                     <h3>Treasure</h3>
                     { treasureCards }
                 </div> : null }
 
-            <div className="admin-player-cards-container">
-                <h3>Player Cards</h3>
+            { this.props.roundInfo.phase  > GamePhase.NOT_DEALT && this.props.roundInfo.phase < GamePhase.SCORING ?
+                <div className="admin-player-cards-container">
+                    <h3>Player Cards</h3>
 
-                {players}
-            </div>
+                    {players}
+                </div> : null}
+
+            { roundScoringView }
         </div>);
     }
 }

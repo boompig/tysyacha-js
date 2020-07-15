@@ -1,3 +1,7 @@
+/**
+ * This view shows the *overall* scores of the players
+ */
+
 import React from 'react';
 
 interface IScoreViewProps {

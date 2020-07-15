@@ -129,6 +129,10 @@ export interface IPlayingPhaseInfo {
      */
     turn: string;
     marriage: Suit | null;
+    /**
+     * map from player to declared marriages
+     */
+    declaredMarriages: {[key: string]: Suit[]};
 }
 
 export interface IBidsResponse {

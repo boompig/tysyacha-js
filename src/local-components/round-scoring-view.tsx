@@ -1,5 +1,9 @@
+/**
+ * This view shows the scoring for the given round
+ */
+
 import React from "react";
-import {Bid, computeRoundScores, ITrickCard} from "../game-mechanics";
+import {Bid, computeRoundScores, ITrickCard, IPastTrick} from "../game-mechanics";
 import {Suit} from "../cards";
 import {CardView} from "./card-view";
 
@@ -12,11 +16,10 @@ interface IScoringViewProps {
     tricksTaken: {[key: string]: ITrickCard[][]};
     declaredMarriages: {[key: string]: Suit[]};
 
-    onFinish: (scores: {[key: string]: number}) => any;
+    onFinish?: (scores: {[key: string]: number}) => any;
 }
 
 interface IScoringViewState {
-
 }
 
 export class RoundScoringView extends React.PureComponent<IScoringViewProps, IScoringViewState> {
@@ -69,8 +72,10 @@ export class RoundScoringView extends React.PureComponent<IScoringViewProps, ISc
                 <h3>Taken Tricks</h3>
                 {playerTricks}
             </div>
-            <button type="button" className="btn btn-primary btn-lg"
-                onClick={(e) => this.props.onFinish(finalPoints)}>Start Next Round</button>
+            { this.props.onFinish ?
+                <button type="button" className="btn btn-primary btn-lg"
+                    onClick={(e) => this.props.onFinish ? this.props.onFinish(finalPoints) : null}>Start Next Round</button> :
+                null }
         </div>);
     }
 }

@@ -187,6 +187,18 @@ export function countTrickPoints(tricks: ITrickCard[][]): number {
     }
 }
 
+export function groupTricksByPlayer(playerNames: string[], tricksTaken: IPastTrick[]): {[key: string]: ITrickCard[][]} {
+    // sort the tricks by player
+    const tricksPerPlayer: {[key: string]: ITrickCard[][]} = {};
+    playerNames.forEach((name: string) => {
+        tricksPerPlayer[name] = [];
+    })
+    tricksTaken.forEach((trick: IPastTrick) => {
+        tricksPerPlayer[trick.winner].push(trick.trick);
+    });
+    return tricksPerPlayer;
+}
+
 export function computeRoundScores(playerNames: string[], tricksTaken: {[key: string]: ITrickCard[][]}, declaredMarriages: {[key: string]: Suit[]}): {[key: string]: number} {
     const finalPoints = {} as {[key: string]: number};
     playerNames.forEach((name: string) => {
