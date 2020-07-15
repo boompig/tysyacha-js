@@ -124,6 +124,9 @@ export interface IPlayCardMessage {
 export interface IPlayingPhaseInfo {
     currentTrick: ITrickCard[];
     pastTricks: IPastTrick[];
+    /**
+     * name of the player whose turn it is
+     */
     turn: string;
     marriage: Suit | null;
 }
@@ -158,6 +161,12 @@ export interface IRoundInfo {
      * This has no meaning in rounds after BIDDING
      */
     biddingPlayer: string;
+
+    /**
+     * The finalized contract.
+     * This has no meaning in rounds before DISTRIBUTE_CARDS
+     */
+    finalContract: Bid | null;
 }
 
 export interface IAdminGameResponse {

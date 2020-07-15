@@ -4,6 +4,25 @@ import { Bid, GamePhase, ITrickCard, isMarriagePlayed, getWinningCard, IPastTric
 import { PlayerView } from './player-view';
 import { Hand, Card, Suit, cardToString } from './cards';
 
+interface ICurrentTrickViewProps {
+    currentTrick: ITrickCard[];
+}
+
+export function CurrentTrickView(props: ICurrentTrickViewProps) {
+    const currentTrickList = props.currentTrick.map((c: ITrickCard, i: number) => {
+        return <li key={`trick-card-${i}`}>{ c.card.toString() } - { c.player }</li>
+    });
+
+    return <div className="current-trick-container">
+        <h3>Current Trick</h3>
+        { props.currentTrick.length ?
+            <ol>
+                {currentTrickList}
+            </ol>: <div>no cards in current trick</div>
+        }
+    </div>;
+}
+
 interface IProps {
     name: string;
     playerIndex: number;
@@ -158,10 +177,6 @@ export function PlayingView(props: IProps) {
     });
     cardOptions.splice(0, 0, <option value={-1} key={-1}>-- select a card to play --</option>);
 
-    const currentTrickList = currentTrick.map((c: ITrickCard) => {
-        return <li>{ c.card.toString() } - { c.player }</li>
-    })
-
     return <div className='playing-view'>
         <h3>Final Contract</h3>
         <div>{ props.finalContract.player } is trying to make  { props.finalContract.points } points</div>
@@ -176,12 +191,8 @@ export function PlayingView(props: IProps) {
             </tbody>
         </table>
 
-        <h3>Current Trick</h3>
-        { currentTrick.length ?
-            <ol>
-                {currentTrickList}
-            </ol>: <div>no cards in current trick</div>
-        }
+        <CurrentTrickView
+            currentTrick={currentTrick} />
 
         <h3>Your Cards</h3>
         <PlayerView

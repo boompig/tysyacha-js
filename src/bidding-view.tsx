@@ -8,7 +8,26 @@ interface IBiddingHistoryViewProps {
     bids: Bid[];
 }
 
-export class BiddingHistoryView extends React.PureComponent<IBiddingHistoryViewProps, {}> {
+interface IBiddingHistoryViewState {
+    isCollapsed: boolean;
+}
+
+export class BiddingHistoryView extends React.PureComponent<IBiddingHistoryViewProps, IBiddingHistoryViewState> {
+    constructor(props: IBiddingHistoryViewProps) {
+        super(props);
+        this.state = {
+            isCollapsed: false
+        };
+        this.toggleCollapse = this.toggleCollapse.bind(this);
+    }
+
+    toggleCollapse(e: React.SyntheticEvent) {
+        e.preventDefault();
+        this.setState({
+            isCollapsed: !this.state.isCollapsed,
+        });
+    }
+
     render() {
         const highestBid = getWinningBid(this.props.bids);
         const bidRows = this.props.bids.map((bid: Bid, i: number) => {
@@ -18,25 +37,33 @@ export class BiddingHistoryView extends React.PureComponent<IBiddingHistoryViewP
             </tr>
         });
 
+        const table = this.props.bids.length === 0 ?
+            <div>no bids yet</div> :
+            <table className='table table-striped table-sm'>
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Bid</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    { bidRows }
+                </tbody>
+            </table>
+
         return (<div className="bid-history-container">
-            <h2>Bids</h2>
-            { highestBid === null ? null :
+            <h2>
+                <a href="#bid-collpase" role="button"
+                    onClick={(e) => this.toggleCollapse(e)}>
+                    <span>Bids</span>
+                    <span>{ this.state.isCollapsed ? "(collapsed)" : ""}</span>
+                </a>
+            </h2>
+            { highestBid === null || this.state.isCollapsed ? null :
                 <div className="highest-bid">Highest bid: { highestBid.points }&nbsp;({highestBid.player})</div> }
 
-            { this.props.bids.length === 0 ?
-                <div>no bids yet</div> :
-                <table className='table table-striped table-sm'>
-                    <thead>
-                        <tr>
-                            <th>Player</th>
-                            <th>Bid</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        { bidRows }
-                    </tbody>
-                </table>
-            }
+            { this.state.isCollapsed ? null :
+                table }
         </div>);
     }
 }

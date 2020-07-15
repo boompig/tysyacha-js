@@ -1,5 +1,5 @@
 import React from "react";
-import { API, IGameInfo, IRoundInfo } from "../api";
+import { API, IGameInfo, IRoundInfo, IPlayingPhaseInfo } from "../api";
 import { IDeal, Bid } from "../game-mechanics";
 import { GameView } from "./game-view";
 import { NoneSelectedView } from "./none-selected-view";
@@ -48,6 +48,10 @@ interface IState {
      * Fetched from the server
      */
     bidHistory: Bid[];
+    /**
+     * Fetched from the server
+     */
+    playingPhaseInfo: IPlayingPhaseInfo | null;
 }
 
 export class ServerView extends React.PureComponent<IProps, IState> {
@@ -71,6 +75,7 @@ export class ServerView extends React.PureComponent<IProps, IState> {
             roundInfo: {},
             cardsPerRound: {},
             bidHistory: [],
+            playingPhaseInfo: null,
 
             errorMsg: null,
         }
@@ -78,6 +83,7 @@ export class ServerView extends React.PureComponent<IProps, IState> {
         this.loadGames = this.loadGames.bind(this);
         this.loadGameInfo = this.loadGameInfo.bind(this);
         this.loadRoundBids = this.loadRoundBids.bind(this);
+        this.loadData = this.loadData.bind(this);
         this.onSelectGame = this.onSelectGame.bind(this);
         this.onSelectRound = this.onSelectRound.bind(this);
     }
@@ -104,6 +110,13 @@ export class ServerView extends React.PureComponent<IProps, IState> {
         });
     }
 
+    async loadPlayingPhaseInfo(gameId: string, round: number) {
+        const r = await this.state.api.getPlayingPhaseInfo(gameId, round);
+        this.setState({
+            playingPhaseInfo: r,
+        });
+    }
+
     async onSelectGame(gameId: string) {
         return this.loadGameInfo(gameId);
     }
@@ -127,7 +140,8 @@ export class ServerView extends React.PureComponent<IProps, IState> {
         });
     }
 
-    componentDidMount() {
+    async loadData() {
+        console.log("loading all data...");
         this.loadGames();
 
         // read information from the url
@@ -146,12 +160,18 @@ export class ServerView extends React.PureComponent<IProps, IState> {
         }
         if (gameId && round !== -1) {
             this.loadRoundBids(gameId, round);
+            this.loadPlayingPhaseInfo(gameId, round);
         }
 
         this.setState({
             gameId,
             round,
-        })
+        });
+        window.setTimeout(this.loadData, 5000);
+    }
+
+    componentDidMount() {
+        this.loadData();
     }
 
     render() {
@@ -174,7 +194,8 @@ export class ServerView extends React.PureComponent<IProps, IState> {
                     round={this.state.round}
                     roundInfo={this.state.roundInfo[this.state.round]}
                     cards={this.state.cardsPerRound[this.state.round]}
-                    bidHistory={this.state.bidHistory} />;
+                    bidHistory={this.state.bidHistory}
+                    playingPhaseInfo={this.state.playingPhaseInfo} />;
             }
         }  else {
             view = <NoneSelectedView
