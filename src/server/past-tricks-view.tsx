@@ -38,7 +38,8 @@ export class PastTricksView extends React.PureComponent<IProps, IState> {
 
         return (<div>
             <h2>Past Tricks</h2>
-            { pastTricks }
+            { pastTricks.length ? pastTricks :
+                <div>no past tricks</div> }
         </div>);
     }
 }

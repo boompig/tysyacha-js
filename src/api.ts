@@ -152,6 +152,10 @@ export interface IGameInfo {
     creator: string;
     round: number;
     hasStarted: boolean;
+    /**
+     * Map from player names to their scores
+     */
+    scores: {[key: string]: number};
 }
 
 export interface IRoundInfo {
@@ -165,7 +169,11 @@ export interface IRoundInfo {
      * This has no meaning in rounds after BIDDING
      */
     biddingPlayer: string;
-
+    /**
+     * The winning bid during the bidding phase
+     * This has no meaning in rounds before REVEAL_TREASURE
+     */
+    winningBid: Bid | null;
     /**
      * The finalized contract.
      * This has no meaning in rounds before DISTRIBUTE_CARDS
@@ -330,13 +338,21 @@ export class API {
             card,
             isMarriage,
         });
-        return r;
+        if(r.ok) {
+            return r;
+        } else {
+            const t = await r.text();
+            throw new Error(`failed to play card: ${t}`)
+        }
     }
 
     async getPlayingPhaseInfo(gameId: string, round: number): Promise<IPlayingPhaseInfo> {
         const r = await this.getJSON(`/game/${gameId}/round/${round}/playing-phase-info`);
-        if(r.ok) {
+        if (r.ok) {
             const j = (await r.json()) as IPlayingPhaseInfo;
+            if (!j) {
+                throw new Error('no playing phase info loaded');
+            }
             j.currentTrick = j.currentTrick.map((tc: ITrickCard) => {
                 return {
                     player: tc.player,
@@ -363,6 +379,13 @@ export class API {
         });
         const j = await r.json();
         return j as ICreateGameResponse;
+    }
+
+    async postEndRound(gameId: string, round: number, username: string): Promise<Response> {
+        const r = await this.postJSON(`/game/${gameId}/round/${round}/end-round`, {
+            username,
+        });
+        return r;
     }
 
     /** ******** Admin APIs *********** */

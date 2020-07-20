@@ -24,6 +24,9 @@ interface IScoringViewState {
 
 export class RoundScoringView extends React.PureComponent<IScoringViewProps, IScoringViewState> {
     render() {
+        if(!this.props.declaredMarriages) {
+            throw new Error('declared marriages is null');
+        }
         // calculate final points
         const finalPoints = computeRoundScores(this.props.playerNames, this.props.tricksTaken, this.props.declaredMarriages);
         // did the contract player succeed

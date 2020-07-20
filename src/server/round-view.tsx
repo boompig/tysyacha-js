@@ -8,6 +8,8 @@ import { BiddingHistoryView } from "../bidding-view";
 import { CurrentTrickView } from "../playing-view";
 import {PastTricksView} from "./past-tricks-view";
 import { RoundScoringView } from "../local-components/round-scoring-view";
+import {ApiView} from './api-view';
+import ScoreView from "../score-view";
 
 interface IProps {
     roundInfo: IRoundInfo;
@@ -50,14 +52,17 @@ class RoundInfoView extends React.PureComponent<IProps, IState> {
                     <div>Dealer - { this.props.roundInfo.dealer }</div>
                     { this.props.roundInfo.phase === GamePhase.BIDDING ?
                         <div>Current Bidder - { this.props.roundInfo.biddingPlayer }</div>: null}
+                    { this.props.roundInfo.phase === GamePhase.REVEAL_TREASURE && this.props.roundInfo.winningBid ?
+                        <div>Winning Bid - {this.props.roundInfo.winningBid.points} ({this.props.roundInfo.winningBid.player})</div> :
+                        null}
                     { this.props.roundInfo.phase >= GamePhase.DISTRIBUTE_CARDS && this.props.roundInfo.finalContract ?
-                        <div>Final contract - {this.props.roundInfo.finalContract.points} ({this.props.roundInfo.finalContract.player})</div>:
+                        <div>Final Contract - {this.props.roundInfo.finalContract.points} ({this.props.roundInfo.finalContract.player})</div>:
                         null}
                     { this.props.roundInfo.phase === GamePhase.PLAYING && this.props.playingPhaseInfo ?
-                        <div>Current turn - { this.props.playingPhaseInfo.turn }</div>
+                        <div>Current Turn - { this.props.playingPhaseInfo.turn }</div>
                         : null}
                     { this.props.roundInfo.phase === GamePhase.PLAYING && this.props.playingPhaseInfo ?
-                        <div>Current trump - { this.props.playingPhaseInfo.marriage ? this.props.playingPhaseInfo.marriage : "none" }</div>
+                        <div>Current Trump - { this.props.playingPhaseInfo.marriage ? this.props.playingPhaseInfo.marriage : "none" }</div>
                         : null}
                 </div> }
         </div>);
@@ -150,7 +155,7 @@ export class RoundView extends React.PureComponent<IRoundViewProps, IRoundViewSt
         }
 
         let roundScoringView = null;
-        if (this.props.roundInfo.phase === GamePhase.SCORING && this.props.roundInfo.finalContract && this.props.playingPhaseInfo) {
+        if (this.props.roundInfo.phase === GamePhase.SCORING && this.props.roundInfo.finalContract && this.props.playingPhaseInfo && this.props.playingPhaseInfo) {
             const tricksPerPlayer = groupTricksByPlayer(this.props.playerNames, this.props.playingPhaseInfo.pastTricks);
             roundScoringView = <RoundScoringView
                     contract={this.props.roundInfo.finalContract}
@@ -163,9 +168,13 @@ export class RoundView extends React.PureComponent<IRoundViewProps, IRoundViewSt
         return (<div>
             <h1 className="title">Game { this.props.gameId } - Round { this.props.round }</h1>
 
-            <AdminPlayerView
+            {/* <AdminPlayerView
                 playerNames={this.props.playerNames}
-                isCollapsed={true} />
+                isCollapsed={true} /> */}
+            <ScoreView
+                scores={this.props.gameInfo.scores}
+                playerNames={this.props.playerNames}
+                isCollapsed={this.props.roundInfo.phase !== GamePhase.SCORING} />
             <GameInfoView
                 gameInfo={this.props.gameInfo}
                 isCollapsed={true} />
@@ -177,6 +186,7 @@ export class RoundView extends React.PureComponent<IRoundViewProps, IRoundViewSt
 
             { this.props.roundInfo.phase > GamePhase.NOT_DEALT ?
                 <BiddingHistoryView
+                    isCollapsed={this.props.roundInfo.phase === GamePhase.PLAYING}
                     bids={this.props.bidHistory} /> : null }
 
             {this.props.playingPhaseInfo && this.props.roundInfo.phase >= GamePhase.PLAYING && this.props.roundInfo.phase < GamePhase.SCORING ?
@@ -191,7 +201,12 @@ export class RoundView extends React.PureComponent<IRoundViewProps, IRoundViewSt
 
             { this.props.roundInfo.phase > GamePhase.NOT_DEALT && this.props.roundInfo.phase <= GamePhase.DISTRIBUTE_CARDS ?
                 <div className="admin-treasure-container">
-                    <h3>Treasure</h3>
+                    <h3>
+                        <span>Treasure</span>
+                        { this.props.roundInfo.phase === GamePhase.BIDDING ?
+                            <span>&nbsp;(hidden from players)</span> :
+                            <span>&nbsp;(revealed to players)</span>}
+                    </h3>
                     { treasureCards }
                 </div> : null }
 
@@ -203,6 +218,14 @@ export class RoundView extends React.PureComponent<IRoundViewProps, IRoundViewSt
                 </div> : null}
 
             { roundScoringView }
+
+            <ApiView roundInfo={this.props.roundInfo}
+                gameInfo={this.props.gameInfo}
+                playingPhaseInfo={this.props.playingPhaseInfo}
+                gameId={this.props.gameId}
+                playerNames={this.props.playerNames}
+                playerCards={this.props.cards.playerCards}
+                treasure={this.props.cards.treasure}></ApiView>
         </div>);
     }
 }

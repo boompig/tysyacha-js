@@ -91,6 +91,7 @@ export class ServerView extends React.PureComponent<IProps, IState> {
     async loadGameInfo(gameId: string) {
         console.log(`Getting game info for game ${gameId}...`);
         const r = await this.state.api.adminGetGameInfo(gameId);
+        console.log(r);
         this.setState({
             gameId,
             playerNames: r.playerNames,
@@ -111,7 +112,9 @@ export class ServerView extends React.PureComponent<IProps, IState> {
     }
 
     async loadPlayingPhaseInfo(gameId: string, round: number) {
+        console.log(`Loading playing phase info for game ${gameId} and round ${round}`);
         const r = await this.state.api.getPlayingPhaseInfo(gameId, round);
+        console.log(r);
         this.setState({
             playingPhaseInfo: r,
         });
@@ -167,7 +170,7 @@ export class ServerView extends React.PureComponent<IProps, IState> {
             gameId,
             round,
         });
-        window.setTimeout(this.loadData, 5000);
+        window.setTimeout(this.loadData, 8000);
     }
 
     componentDidMount() {

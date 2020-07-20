@@ -6,6 +6,10 @@ import { GamePhase, Bid, getWinningBid } from './game-mechanics';
 
 interface IBiddingHistoryViewProps {
     bids: Bid[];
+    /**
+     * Whether to collapse the view initially
+     */
+    isCollapsed?: boolean;
 }
 
 interface IBiddingHistoryViewState {
@@ -16,7 +20,7 @@ export class BiddingHistoryView extends React.PureComponent<IBiddingHistoryViewP
     constructor(props: IBiddingHistoryViewProps) {
         super(props);
         this.state = {
-            isCollapsed: false
+            isCollapsed: this.props.isCollapsed ? true : false,
         };
         this.toggleCollapse = this.toggleCollapse.bind(this);
     }

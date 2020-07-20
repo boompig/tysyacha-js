@@ -41,3 +41,15 @@ header .game-id {
 .bid-history-container .highest-bid {
 	margin-bottom: .5rem;
 }
+
+.game-round.active {
+	font-weight: bold;
+}
+
+.btn-container {
+	padding-top: 1rem;
+}
+
+.bidding-form .btn {
+	margin-top: 1rem;
+}

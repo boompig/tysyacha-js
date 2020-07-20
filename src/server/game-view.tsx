@@ -136,9 +136,18 @@ export class GameView extends React.PureComponent<IProps, IState> {
 
     render() {
         const rounds = this.props.rounds.map((round: number) => {
+            const isActive = round === this.props.gameInfo.round;
+            const classes = ['game-round'];
+            if (isActive) {
+                classes.push('active');
+            }
             return <li key={`round-${round}`}>
                 <a href={`/server?game=${this.props.gameId}&round=${round}`}
-                    onClick={(e) => this.handleSelectRound(e, round)}>Round {round}</a>
+                    className={ classes.join(' ') }
+                    onClick={(e) => this.handleSelectRound(e, round)}>
+                        <span>Round {round}</span>
+                        { isActive ? <span>&nbsp;(active)</span> : null }
+                </a>
             </li>;
         });
 
