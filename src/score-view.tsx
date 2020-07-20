@@ -14,7 +14,15 @@ interface IScoreViewProps {
      */
     isCollapsed?: boolean;
 
+    /**
+     * The current round
+     */
     round: number;
+
+    /**
+     * The currently selected round
+     */
+    selectedRound?: number;
 }
 
 export function ScoreView(props: IScoreViewProps) {
@@ -37,7 +45,11 @@ export function ScoreView(props: IScoreViewProps) {
         const scoreRow = props.playerNames.map((name: string) => {
             return <td key={`score-row-${name}-round-${round}`}>{ props.scores[name][round] }</td>;
         });
-        return (<tr key={`score-row-${round}`}>
+        const classes : string[] = [];
+        if (props.selectedRound === round) {
+            classes.push('table-warning');
+        }
+        return (<tr key={`score-row-${round}`} className={classes.join(' ')}>
             {scoreRow}
         </tr>);
     });
@@ -53,7 +65,7 @@ export function ScoreView(props: IScoreViewProps) {
         </h2>
 
         { isCollapsed ? null :
-            <table className='table table-striped' id="scoring-table">
+            <table className='table table-striped table-sm' id="scoring-table">
                 <thead>
                     <tr>
                         { headerRow }

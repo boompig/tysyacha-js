@@ -1,5 +1,6 @@
 import React from "react";
 import { IGameInfo } from "../api";
+import ScoreView from "../score-view";
 
 interface IPlayerProps {
     playerNames: string[];
@@ -154,8 +155,13 @@ export class GameView extends React.PureComponent<IProps, IState> {
         return (<div>
             <h1 className="title">Game { this.props.gameId }</h1>
 
-            <AdminPlayerView
-                playerNames={this.props.playerNames} />
+            {/* <AdminPlayerView
+                playerNames={this.props.playerNames} /> */}
+
+            <ScoreView
+                scores={this.props.gameInfo.scores}
+                playerNames={this.props.playerNames}
+                round={this.props.gameInfo.round} />
 
             <GameInfoView
                 gameInfo={this.props.gameInfo} />

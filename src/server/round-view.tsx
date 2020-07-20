@@ -170,7 +170,13 @@ export class RoundView extends React.PureComponent<IRoundViewProps, IRoundViewSt
         const isActiveRound = this.props.round === this.props.gameInfo.round;
 
         return (<div>
-            <h1 className="title">Game { this.props.gameId } - Round { this.props.round }</h1>
+            <h1 className="title">
+                <span>Game { this.props.gameId } - Round { this.props.round }</span>
+            </h1>
+            { isActiveRound ? null :
+                <h3>
+                    <span className="badge badge-danger">Round Over</span>
+                </h3>}
 
             {/* <AdminPlayerView
                 playerNames={this.props.playerNames}
@@ -178,6 +184,7 @@ export class RoundView extends React.PureComponent<IRoundViewProps, IRoundViewSt
             {/* send the game's round */}
             <ScoreView
                 round={this.props.gameInfo.round}
+                selectedRound={this.props.round}
                 scores={this.props.gameInfo.scores}
                 playerNames={this.props.playerNames}
                 isCollapsed={this.props.roundInfo.phase !== GamePhase.SCORING && this.props.roundInfo.phase !== GamePhase.NOT_DEALT} />
