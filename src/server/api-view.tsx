@@ -11,8 +11,8 @@ interface IProps {
     gameInfo: IGameInfo;
     roundInfo: IRoundInfo;
     playingPhaseInfo: IPlayingPhaseInfo | null;
-    playerCards: {[key: string]: Hand};
-    treasure: Card[];
+    playerCards: {[key: string]: Hand} | null;
+    treasure: Card[] | null;
     playerNames: string[];
 }
 
@@ -119,6 +119,10 @@ export class ApiView extends React.PureComponent<IProps, IState> {
             throw new Error('Cannot distribute cards without having a final contract');
         }
 
+        if(!this.props.playerCards || !this.props.treasure) {
+            throw new Error('player cards or treasure not set');
+        }
+
         // given selected cards, figure out what's kept and what's given away
         if(Object.keys(this.state.selectedCards).length !== 2) {
             throw new Error('Must select 2 players and 1 card per player');
@@ -153,6 +157,10 @@ export class ApiView extends React.PureComponent<IProps, IState> {
     }
 
     async onPlayCard(playerIndex: number, cardIndex: number) {
+        if(!this.props.playerCards) {
+            throw new Error('player cards not set');
+        }
+
         const player = this.props.playerNames[playerIndex];
         const hand = this.props.playerCards[player];
         const card = hand.cards[cardIndex];
@@ -180,13 +188,14 @@ export class ApiView extends React.PureComponent<IProps, IState> {
             this.props.gameInfo.round,
             this.props.gameInfo.creator
         );
-        // easier to just reload
-        window.location.reload();
+
+        // easier to just load the game page again
+        window.location.href = `/server?game=${this.props.gameId}`;
     }
 
     render() {
         let playerView = null;
-        if (this.props.roundInfo.phase === GamePhase.PLAYING && this.props.playingPhaseInfo && this.props.roundInfo.finalContract) {
+        if (this.props.roundInfo.phase === GamePhase.PLAYING && this.props.playingPhaseInfo && this.props.roundInfo.finalContract && this.props.playerCards) {
             let player = this.props.playingPhaseInfo.turn;
             let numTricksTaken = 0;
             let tricksTaken: ITrickCard[][] = [];
@@ -247,7 +256,7 @@ export class ApiView extends React.PureComponent<IProps, IState> {
                 </form>
                 : null}
 
-            {this.props.roundInfo.phase === GamePhase.DISTRIBUTE_CARDS && this.props.roundInfo.finalContract ?
+            {this.props.roundInfo.phase === GamePhase.DISTRIBUTE_CARDS && this.props.roundInfo.finalContract && this.props.playerCards && this.props.treasure ?
                 <DistributeCardsView
                     contractPlayerCards={this.props.playerCards[this.props.roundInfo.finalContract.player]}
                     treasureCards={this.props.treasure}

@@ -45,7 +45,7 @@ interface IGameViewState {
     isGameOver: boolean;
     gameSeeds: any;
     round: number;
-    scores: {[key: string]: number};
+    scores: {[key: string]: number[]};
     playerNames: string[];
     dealer: number;
     playerIndex: number;
@@ -134,7 +134,7 @@ export class GameView extends React.Component<IGameViewProps, IGameViewState> {
                 } else {
                     // otherwise all scores are zeros
                     for(let user of Object.keys(seeds)) {
-                        scores[user] = 0;
+                        scores[user] = [0];
                     }
                 }
                 // get round from server if included in the same message
@@ -174,7 +174,8 @@ export class GameView extends React.Component<IGameViewProps, IGameViewState> {
     render() {
         return (<div className='game-view'>
             <ScoreView scores={this.state.scores}
-                playerNames={this.state.playerNames} />
+                playerNames={this.state.playerNames}
+                round={this.state.round} />
             { this.state.playerNames ?
                 <RoundView
                     gameId={this.props.gameId}

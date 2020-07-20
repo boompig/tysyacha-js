@@ -6,13 +6,15 @@ import React, {useState} from 'react';
 
 interface IScoreViewProps {
     // map from user to score
-    scores: {[key: string]: number};
+    scores: {[key: string]: number[]};
     // order in which users should be displayed
     playerNames: string[];
     /**
      * True if should initially be displayed as collapsed
      */
     isCollapsed?: boolean;
+
+    round: number;
 }
 
 export function ScoreView(props: IScoreViewProps) {
@@ -26,9 +28,19 @@ export function ScoreView(props: IScoreViewProps) {
     const headerRow = props.playerNames.map((name: string) => {
         return <th key={`header-row-${name}`}>{ name }</th>;
     });
-    const scoreRow = props.playerNames.map((name: string) => {
-        return <td key={`score-row-${name}`}>{ props.scores[name] }</td>;
-    })
+    const rounds: number[] = [];
+    for(let round = 0; round < props.round; round++) {
+        rounds.push(round);
+    }
+
+    const scoreRows = rounds.map((round: number) => {
+        const scoreRow = props.playerNames.map((name: string) => {
+            return <td key={`score-row-${name}-round-${round}`}>{ props.scores[name][round] }</td>;
+        });
+        return (<tr key={`score-row-${round}`}>
+            {scoreRow}
+        </tr>);
+    });
 
     return (<div className='score-view'>
         <h2>
@@ -48,9 +60,7 @@ export function ScoreView(props: IScoreViewProps) {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        { scoreRow }
-                    </tr>
+                    { scoreRows }
                 </tbody>
         </table> }
     </div>)

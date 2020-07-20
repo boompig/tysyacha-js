@@ -153,9 +153,9 @@ export interface IGameInfo {
     round: number;
     hasStarted: boolean;
     /**
-     * Map from player names to their scores
+     * Map from player names to their scores in each number
      */
-    scores: {[key: string]: number};
+    scores: {[key: string]: number[]};
 }
 
 export interface IRoundInfo {

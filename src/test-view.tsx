@@ -12,7 +12,7 @@ interface ITestState {
      */
     dealerIndex: number;
 
-    scores: {[key: string]: number};
+    scores: {[key: string]: number[]};
 
     /**
      * Current round number
@@ -30,9 +30,11 @@ export class TestView extends PureComponent<ITestProps, ITestState> {
         // TODO fictitious player names
         const playerNames = ["Alice", "Daniel", "Boris"]
 
-        const scores = {} as {[key: string]: number};
+        const scores = {} as {[key: string]: number[]};
+
         playerNames.forEach((name: string) => {
-            scores[name] = 0;
+            scores[name] = [];
+            scores[name][0] = 0;
         });
 
         this.state = {
@@ -49,7 +51,7 @@ export class TestView extends PureComponent<ITestProps, ITestState> {
         if(!isEarlyExit) {
             const newScores = Object.assign({}, this.state.scores);
             for(let [name, pts] of Object.entries(scores)) {
-                newScores[name] += pts;
+                newScores[name][this.state.round] += pts;
             }
             this.setState({
                 scores: newScores,
@@ -62,6 +64,7 @@ export class TestView extends PureComponent<ITestProps, ITestState> {
     render() {
         return (<main className="container">
             <ScoreView
+                round={this.state.round}
                 playerNames={this.state.playerNames}
                 scores={this.state.scores}
                 />
