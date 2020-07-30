@@ -40,29 +40,31 @@ interface IPlayerViewProps {
     onCardSelect?: (playerIndex: number, cardIndex: number) => void;
 }
 
+interface IState {}
+
 /**
  * Display the cards as sorted by suit
  */
-export class PlayerView extends PureComponent<IPlayerViewProps, {}> {
+export class PlayerView extends PureComponent<IPlayerViewProps, IState> {
     constructor(props: IPlayerViewProps) {
         super(props);
         this.onSelectCard = this.onSelectCard.bind(this)
     }
 
-    onSelectCard(cardIndex: number) {
+    onSelectCard(cardIndex: number): void {
         if(this.props.isActivePlayer && this.props.onCardSelect) {
             this.props.onCardSelect(this.props.playerIndex, cardIndex);
         }
     }
 
-    render() {
+    render(): JSX.Element {
         const cardViews = [] as JSX.Element[];
         getSuits().forEach((suit: Suit) => {
             this.props.hand.cardsBySuit[suit].forEach((card: Card) => {
                 const i = this.props.hand.cards.indexOf(card);
                 let onClick = undefined;
                 if(this.props.isActivePlayer && this.props.onCardSelect) {
-                    onClick = (e: React.SyntheticEvent) => this.onSelectCard(i);
+                    onClick = (e: React.SyntheticEvent) => {return this.onSelectCard(i)};
                 }
                 const elem = <CardView suit={card.suit}  key={`player-card-${i}`}
                     value={card.value}

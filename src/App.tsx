@@ -10,114 +10,114 @@ import {API, MessageType} from './api';
 const api = new API();
 
 function readGameId(): string | null {
-	const u = new URL(window.location.href);
-	return u.searchParams.get('gameid') || null;
+    const u = new URL(window.location.href);
+    return u.searchParams.get('gameid') || null;
 }
 
-function App() {
-	/**
+function App(): JSX.Element {
+    /**
 	 * True iff there are 3 players who have joined this game
 	 */
-	const [hasStarted, setHasStarted] = useState(false);
-	const [gameId, setGameId] = useState(null as string | null);
+    const [hasStarted, setHasStarted] = useState(false);
+    const [gameId, setGameId] = useState(null as string | null);
 
-	/**
+    /**
 	 * Lounge variables
 	 */
-	const [name, setName] = useState('' as string);
-	const [waitingUsers, setWaitingUsers] = useState([] as string[]);
+    const [name, setName] = useState('' as string);
+    const [waitingUsers, setWaitingUsers] = useState([] as string[]);
 
-	function onDisconnect() {
-		api.sendMessage(MessageType.LEAVE_GAME, {
-			username: name,
-			gameId: gameId,
-		})
-	}
+    function onDisconnect() {
+        api.sendMessage(MessageType.LEAVE_GAME, {
+            username: name,
+            gameId: gameId,
+        })
+    }
 
-	useEffect(() => {
-		function onGameUsers(j: any) {
-			console.log(`Received message of type ${j.msgType} for game ${j.gameId}`);
-			console.log(j);
-			if(j.gameId === gameId) {
-				// remove myself
-				const waitingUsers = j.users.filter((user: string) => {
-					return user !== name;
-				});
-				console.log("got waiting users from server:");
-				console.log(waitingUsers);
-				setWaitingUsers(waitingUsers);
+    useEffect(() => {
+        function onGameUsers(j: any) {
+            console.log(`Received message of type ${j.msgType} for game ${j.gameId}`);
+            console.log(j);
+            if(j.gameId === gameId) {
+                // remove myself
+                const waitingUsers = j.users.filter((user: string) => {
+                    return user !== name;
+                });
+                console.log("got waiting users from server:");
+                console.log(waitingUsers);
+                setWaitingUsers(waitingUsers);
 
-				// so there are 3 including yourself
-				if(waitingUsers.length === 2) {
-					setHasStarted(true);
-				}
-			}
-		}
+                // so there are 3 including yourself
+                if(waitingUsers.length === 2) {
+                    setHasStarted(true);
+                }
+            }
+        }
 
-		async function joinGame (gameId: string, username: string) {
-			console.log(`joining game ${gameId}...`);
-			const r = await api.joinGame(gameId, username);
-			if (r.ok) {
-				const j = await r.json();
-				console.log('Game details:');
-				console.log(j);
-			} else {
-				console.error('Failed to join game')
-			}
-		}
+        async function joinGame (gameId: string, username: string) {
+            console.log(`joining game ${gameId}...`);
+            const r = await api.joinGame(gameId, username);
+            if (r.ok) {
+                const j = await r.json();
+                console.log('Game details:');
+                console.log(j);
+            } else {
+                console.error('Failed to join game')
+            }
+        }
 
-		// read the gameId
-		const gameId = readGameId()
-		if(gameId) {
-			setGameId(gameId);
-		} else {
-			window.location.href = '/lounge';
-			return;
-		}
+        // read the gameId
+        const gameId = readGameId()
+        if(gameId) {
+            setGameId(gameId);
+        } else {
+            window.location.href = '/lounge';
+            return;
+        }
 
-		// read the name
-		const name = readNameCookie();
-		if(name) {
-			setName(name);
-		} else {
-			// name not set. go back to where it can be set
-			window.location.href = '/lounge';
-			return;
-		}
+        // read the name
+        const name = readNameCookie();
+        if(name) {
+            setName(name);
+        } else {
+            // name not set. go back to where it can be set
+            window.location.href = '/lounge';
+            return;
+        }
 
-		api.socket.onopen = (e: Event) => {
-			console.log('Connected to websocket');
-			api.addMessageListener([MessageType.GAME_USERS], onGameUsers);
-			joinGame(gameId, name);
-		};
-	}, []);
+        api.socket.onopen = (e: Event) => {
+            console.log('Connected to websocket');
+            api.addMessageListener([MessageType.GAME_USERS], onGameUsers);
+            joinGame(gameId, name);
+        };
+    }, []);
 
-	if(hasStarted) {
-		if(!gameId || !name) {
-			// gameId and name must be set at this point
-			window.location.href = '/lounge';
-		}
-		return (
-			<div className='App'>
-				<header>
-					<div className='game-id'>Game ID: { gameId }</div>
-				</header>
-				<main className='container'>
-					<GameView
-						api={api}
-						gameId={gameId as string}
-						name={name as string} />
-				</main>
-			</div>
-		);
-	} else {
-		return (<main className='container'>
-			<GameLobby
-				name={name}
-				gameId={gameId}
-				waitingUsers={waitingUsers} />
-		</main>);
-	}
+    if(hasStarted) {
+        if(!gameId || !name) {
+            // gameId and name must be set at this point
+            window.location.href = '/lounge';
+        }
+        return (
+            <div className='App'>
+                <header>
+                    <div className='game-id'>Game ID: { gameId }</div>
+                </header>
+                <main className='container'>
+                    <GameView
+                        api={api}
+                        gameId={gameId as string}
+                        name={name as string} />
+                </main>
+            </div>
+        );
+    } else {
+        return (<main className='container'>
+            <GameLobby
+                name={name}
+                gameId={gameId}
+                waitingUsers={waitingUsers} />
+        </main>);
+    }
 }
 
 export default App;

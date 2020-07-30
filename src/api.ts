@@ -20,6 +20,7 @@ export const ADMIN_API_KEY = "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb
 
 
 if(typeof fetch === "undefined" && process.env.IS_SERVER !== "1") {
+    // eslint-disable-next-line
     var fetch = require("node-fetch");
 }
 
@@ -199,11 +200,11 @@ export class API {
         this.socket = new WebSocket(WEBSOCKET_SERVER);
     }
 
-    async getJSON(path: string, query?: {[key: string]: any}, userHeaders?: {[key: string]: string}) {
+    async getJSON(path: string, query?: {[key: string]: any}, userHeaders?: {[key: string]: string}): Promise<Response> {
         const url = new URL(HTTP_SERVER);
         url.pathname = path;
         if(query) {
-            for(let [k, v] of Object.entries(query)) {
+            for(const [k, v] of Object.entries(query)) {
                 url.searchParams.append(k, v);
             }
         }
@@ -212,7 +213,7 @@ export class API {
             'Content-Type': 'application/json',
         } as {[key: string]: string};
         if(userHeaders) {
-            for(let [key, val] of Object.entries(userHeaders)) {
+            for(const [key, val] of Object.entries(userHeaders)) {
                 headers[key] = val;
             }
         }
@@ -224,7 +225,7 @@ export class API {
         });
     }
 
-    async postJSON(path: string, data?: any, userHeaders?: {[key: string]: string}) {
+    async postJSON(path: string, data?: any, userHeaders?: {[key: string]: string}): Promise<Response> {
         if(!data) {
             data = {};
         }
@@ -235,7 +236,7 @@ export class API {
             'Content-Type': 'application/json',
         } as {[key: string]: string};
         if(userHeaders) {
-            for(let [key, val] of Object.entries(userHeaders)) {
+            for(const [key, val] of Object.entries(userHeaders)) {
                 headers[key] = val;
             }
         }
@@ -428,7 +429,7 @@ export class API {
             const j = (await r.json()) as IAdminGameResponse;
 
             // for the cards, recreate card objects
-            const rounds = Object.keys(j.cardsPerRound).map((n) => Number.parseInt(n, 10));
+            const rounds = Object.keys(j.cardsPerRound).map((n) => {return Number.parseInt(n, 10)});
             rounds.forEach((round: number) => {
                 // player cards
                 const playerCards = {} as {[key: string]: Hand};
@@ -459,14 +460,14 @@ export class API {
     /**
      * Send a websocket message
      */
-    async sendMessage(msgType: MessageType, data: any) {
+    async sendMessage(msgType: MessageType, data: any): Promise<void> {
         const msg: any = {};
         Object.assign(msg, data);
         msg.msgType = msgType;
         await this.socket.send(JSON.stringify(msg));
     }
 
-    addMessageListener(msgTypes: MessageType[], callback: (data: any) => void) {
+    addMessageListener(msgTypes: MessageType[], callback: (data: any) => void): void {
         this.socket.addEventListener('message', (event: MessageEvent) => {
             const data = JSON.parse(event.data);
             if(msgTypes.includes(data.msgType)) {

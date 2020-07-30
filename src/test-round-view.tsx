@@ -90,7 +90,7 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
     /**
      * This is a helper method to get us to a good state
      */
-    async autoPlay() {
+    async autoPlay(): Promise<void> {
         if(this.state.phase !== GamePhase.PLAYING) {
             console.error("phase must be PLAYING to autoplay");
             return;
@@ -108,17 +108,17 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
                     const suit = hand.marriages[0];
                     // find the queen and play it
                     for(let i = 0; i < hand.cards.length; i++) {
-                        let card = hand.cards[i];
+                        const card = hand.cards[i];
                         if(card.value === CardValue.QUEEN && card.suit === suit) {
                             cardIndex = i;
-                            break
+                            break;
                         }
                     }
                 }
             } else if(this.state.currentTrick.length === 0 && this.state.trickNumber === 0) {
                 // for the first trick, try to play an ace if you have one
                 for(let i = 0; i < hand.cards.length; i++) {
-                    let card = hand.cards[i];
+                    const card = hand.cards[i];
                     if(card.value === CardValue.ACE) {
                         cardIndex = i;
                         break;
@@ -144,12 +144,12 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
     /**
      * Basically randomly distribute the treasure cards
      */
-    async autoDistributeTreasure() {
+    async autoDistributeTreasure(): Promise<void> {
         // find the last card that has not been taken and assign it to this player
         const contractPlayer = this.props.playerNames[this.state.contractPlayerIndex];
         let i = 0;
         const selectedTreasureCards = {} as { [key: string]: Card };
-        for (let name of this.props.playerNames) {
+        for (const name of this.props.playerNames) {
             if (name !== contractPlayer) {
                 selectedTreasureCards[name] = this.state.treasure[i];
                 i++;
@@ -165,7 +165,7 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
      * A given player plays the given card (on their turn)
      * NOTE: no sanity checking here
      */
-    async onPlayCard(playerIndex: number, cardIndex: number) {
+    async onPlayCard(playerIndex: number, cardIndex: number): Promise<void> {
         const name = this.props.playerNames[playerIndex];
         const card = this.state.playerHands[name].cards[cardIndex];
         console.log(`[trick ${this.state.trickNumber}] ${name} -> card ${card}`);
@@ -173,7 +173,7 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
 
         if(playerIndex === this.state.activePlayerIndex) {
             // add card to the current trick
-            let currentTrick = this.state.currentTrick.slice();
+            const currentTrick = this.state.currentTrick.slice();
             currentTrick.push({
                 card: card,
                 player: name,
@@ -242,7 +242,7 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
         }
     }
 
-    async dealCards() {
+    async dealCards(): Promise<void> {
         console.log("Dealing cards...");
         const deck = new Deck(1);
 
@@ -272,15 +272,15 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
         console.log("cards have been dealt");
     }
 
-    onSelectTreasureCard(cardIndex: number) {
-        let d = Object.assign({},
+    onSelectTreasureCard(cardIndex: number): void {
+        const d = Object.assign({},
             this.state.selectedTreasureCards
         );
         const card = this.state.treasure[cardIndex];
         if(Object.values(d).includes(card)) {
             // find the key corresponding to the card
             let name = null;
-            for(let [playerName, otherCard] of Object.entries(d)) {
+            for(const [playerName, otherCard] of Object.entries(d)) {
                 if (otherCard === card) {
                     name = playerName;
                     break;
@@ -293,7 +293,7 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
             // who is the player who has not yet been assigned?
             let unassignedName = null;
             const selectingPlayerName = this.props.playerNames[this.state.contractPlayerIndex];
-            for(let name of this.props.playerNames) {
+            for(const name of this.props.playerNames) {
                 if(name !== selectingPlayerName && !(name in d)) {
                     unassignedName = name;
                     break;
@@ -310,7 +310,7 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
         });
     }
 
-    async handleDistributeTreasure() {
+    async handleDistributeTreasure(): Promise<void> {
         const playerHands = Object.assign({}, this.state.playerHands);
         const remainingCards = this.state.treasure.slice();
         const remainingPlayers = this.props.playerNames.slice();
@@ -320,10 +320,10 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
         // first, determine what card the remaining player gets and fill that into m
         const m = Object.assign({}, this.state.selectedTreasureCards);
 
-        for(let [name, card] of Object.entries(this.state.selectedTreasureCards)) {
-            let i = remainingCards.indexOf(card);
+        for(const [name, card] of Object.entries(this.state.selectedTreasureCards)) {
+            const i = remainingCards.indexOf(card);
             remainingCards.splice(i, 1);
-            let j = remainingPlayers.indexOf(name);
+            const j = remainingPlayers.indexOf(name);
             remainingPlayers.splice(j, 1);
         }
 
@@ -332,7 +332,7 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
         m[remainingPlayers[0]] = remainingCards[0];
 
         // next distribute the cards among the players
-        for(let [name, card] of Object.entries(m)) {
+        for(const [name, card] of Object.entries(m)) {
             const cards = playerHands[name].cards.slice();
             cards.push(card);
             const newHand = new Hand(cards);
@@ -347,7 +347,7 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
         });
     }
 
-    resetRound() {
+    resetRound(): void {
         const tricksTaken = Object.fromEntries(this.props.playerNames.map((name: string) => {
             return [name, []];
         }));
@@ -377,7 +377,7 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
         });
     }
 
-    handleCompleteBidding(winningBid: Bid | null) {
+    handleCompleteBidding(winningBid: Bid | null): void {
         if(winningBid) {
             const i = this.props.playerNames.indexOf(winningBid.player);
             this.setState({
@@ -390,12 +390,12 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
         }
     }
 
-    handleNextRound(scores: {[key: string]: number}) {
+    handleNextRound(scores: {[key: string]: number}): void {
         this.props.onRoundOver(scores, false);
         this.resetRound()
     }
 
-    render() {
+    render(): JSX.Element {
         const playerHands = this.props.playerNames.map((name: string, i: number) => {
             return <PlayerView key={`player-${i}`}
                 name={name}
@@ -443,7 +443,7 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
                     onDistribute={this.handleDistributeTreasure} />;
             }
             case GamePhase.PLAYING: {
-                // playing
+            // playing
                 if(!this.state.currentContract) {
                     throw new Error("there must be a contract in this pahse");
                 }
@@ -460,14 +460,14 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
                             {trick.length === 0 ? "no cards in current trick" :
                                 <div className="trick-card-container">
                                     {trick}
-                            </div>}
+                                </div>}
                         </div>
                         <div className="player-hands">
                             <h3>Players</h3>
                             {playerHands}
                         </div>
                         <button type="button" className="btn btn-primary btn-lg"
-                            onClick={(e) => this.autoPlay()}>Autoplay</button>
+                            onClick={(e) => {return this.autoPlay()}}>Autoplay</button>
                     </div>
                 </div>;
             }

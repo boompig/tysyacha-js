@@ -33,12 +33,12 @@ export class BiddingView extends React.PureComponent<IBiddingViewProps, IBidding
     /**
      * TODO this is a temporary measure to assign a bid to the strongest hand
      */
-    onClick() {
+    onClick(): Promise<void> {
         let bestScore = 0;
         let contractPlayer = null as string | null;
-        for(let [name, hand] of Object.entries(this.props.playerHands)) {
-            let score = scoreHand(hand);
-            let numMarriages = hand.marriages.length;
+        for(const [name, hand] of Object.entries(this.props.playerHands)) {
+            const score = scoreHand(hand);
+            const numMarriages = hand.marriages.length;
             console.log(`Player ${name} has hand score of ${score} (${numMarriages} marriages)`);
             if(score > bestScore) {
                 contractPlayer = name;
@@ -56,7 +56,7 @@ export class BiddingView extends React.PureComponent<IBiddingViewProps, IBidding
         }));
     }
 
-    render() {
+    render(): JSX.Element {
         const playerViews = this.props.playerNames.map((name: string, i: number) => {
             const hand = this.props.playerHands[name];
             return (<div key={`bid-container-${i}`}>
@@ -78,7 +78,7 @@ export class BiddingView extends React.PureComponent<IBiddingViewProps, IBidding
         return <div>
             {playerViews}
             <button type="button" className="btn btn-primary btn-lg"
-                onClick={(e) => this.onClick()}>Assign Bids</button>
+                onClick={(e) => {return this.onClick()}}>Assign Bids</button>
         </div>;
     }
 }

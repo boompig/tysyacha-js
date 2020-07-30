@@ -39,7 +39,7 @@ interface IRoundViewProps {
 /**
  * Displays the game for a single round
  */
-export function RoundView(props: IRoundViewProps) {
+export function RoundView(props: IRoundViewProps): JSX.Element {
     const [phase, setPhase] = useState(GamePhase.NOT_DEALT);
     const [hand, setHand] = useState(null as Hand | null);
     const [hasRoundInfo, setHasRoundInfo] = useState(false);
@@ -164,7 +164,7 @@ export function RoundView(props: IRoundViewProps) {
         if(props.dealer === props.playerIndex) {
             return (<div className='round-view'>
                 <button type='button' className='btn btn-lg btn-primary'
-                    onClick={() => handleDeal()}>Deal</button>
+                    onClick={() => {return handleDeal()}}>Deal</button>
             </div>);
         } else {
             return <div className='round-view'>
@@ -243,7 +243,7 @@ export function RoundView(props: IRoundViewProps) {
                     hand={hand}
                     playerNames={props.playerNames}
                     api={props.api} />
-        </div>;
+            </div>;
         }
     } else {
         throw new Error(`unknown phase: ${phase}`);

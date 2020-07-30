@@ -19,7 +19,7 @@ interface RevealTreasureViewProps {
 interface RevealTreasureViewState {}
 
 export class RevealTreasureView extends React.PureComponent<RevealTreasureViewProps, RevealTreasureViewState> {
-    render() {
+    render(): JSX.Element {
         const playerHands = this.props.playerNames.map((name: string, i: number) => {
             return <PlayerView key={`player-${i}`}
                 name={name}
@@ -38,7 +38,7 @@ export class RevealTreasureView extends React.PureComponent<RevealTreasureViewPr
             let targetPlayer = null;
             if(isSelected) {
                 // find the corresponding player name
-                for(let [name, otherCard] of Object.entries(this.props.selectedTreasureCards)) {
+                for(const [name, otherCard] of Object.entries(this.props.selectedTreasureCards)) {
                     if(card === otherCard) {
                         targetPlayer = name;
                     }
@@ -49,7 +49,7 @@ export class RevealTreasureView extends React.PureComponent<RevealTreasureViewPr
                     suit={card.suit}
                     value={card.value}
                     classNames={isSelected ? ["card-selected"] : []}
-                    onClick={(e) => this.props.onSelect(i)} />
+                    onClick={(e) => {return this.props.onSelect(i)}} />
                 { targetPlayer ?
                     <div className="target-player">sending to {targetPlayer}</div>
                     : null}
@@ -61,8 +61,8 @@ export class RevealTreasureView extends React.PureComponent<RevealTreasureViewPr
                 <div className="treasure-container">{treasureCards}</div>
                 { Object.keys(this.props.selectedTreasureCards).length === 2 ?
                     <button type="button" className="btn btn-primary btn-lg"
-                        onClick={(e) => this.props.onDistribute(this.props.selectedTreasureCards)}
-                        >Distribute Cards</button> : null }
+                        onClick={(e) => {return this.props.onDistribute(this.props.selectedTreasureCards)}}
+                    >Distribute Cards</button> : null }
                 <div className="player-hands">
                     <h3>Players</h3>
                     {playerHands}

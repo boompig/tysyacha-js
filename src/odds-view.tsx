@@ -1,6 +1,6 @@
 import * as React from "react";
 
-export function OddsView() {
+export function OddsView(): JSX.Element {
     // calculate the odds of drawing some specific cards
     // for each "lone" marriage, calculate the odds of getting that particular mate
     // and calculate the overall odds of getting *some* card that you want

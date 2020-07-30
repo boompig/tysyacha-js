@@ -16,10 +16,11 @@ interface ICardViewProps {
     onClick?: (e: React.SyntheticEvent) => any;
 }
 
+interface IState {}
 
-export class CardView extends PureComponent<ICardViewProps, {}> {
+export class CardView extends PureComponent<ICardViewProps, IState> {
 
-    getSuitColor(suit: Suit) {
+    getSuitColor(suit: Suit): string {
         switch(suit) {
             case Suit.CLUBS:
             case Suit.SPADES:
@@ -30,7 +31,7 @@ export class CardView extends PureComponent<ICardViewProps, {}> {
         }
     }
 
-    render() {
+    render(): JSX.Element {
         const suitColor = this.getSuitColor(this.props.suit);
         const classes = ["playing-card", "card-" + suitColor];
         if(this.props.onClick) {
@@ -40,7 +41,7 @@ export class CardView extends PureComponent<ICardViewProps, {}> {
             classes.push(...this.props.classNames);
         }
         return (<div className={ classes.join(" ") }
-            onClick={(e) => this.props.onClick ? this.props.onClick(e) : null }>
+            onClick={(e) => {return this.props.onClick ? this.props.onClick(e) : null} }>
             <div className="card-top-right-corner">
                 <span className="value">{ valueToString(this.props.value) }</span>
                 <span className="suit">{ this.props.suit }</span>

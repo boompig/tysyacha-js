@@ -12,12 +12,12 @@ interface IPlayerProps {
  * Display the player's cards
  * Organize them by suit
  */
-export function PlayerView(props: IPlayerProps) {
-    let elems = [];
-    let pts = props.cards.getPoints();
+export function PlayerView(props: IPlayerProps): JSX.Element {
+    const elems = [];
+    const pts = props.cards.getPoints();
 
     // display cards by suit
-    for(let [suit, cards] of Object.entries(props.cards.cardsBySuit)) {
+    for(const [suit, cards] of Object.entries(props.cards.cardsBySuit)) {
         // let cardElems = (cards as Card[]).map((card: Card) => {
         //     return <span key={card.toString()}>{card.valueToString() }</span>;
         // });
@@ -35,11 +35,11 @@ export function PlayerView(props: IPlayerProps) {
     const marriages = props.cards.marriages;
     const potentialMarriages = [];
 
-    for(let [suit, cards] of Object.entries(props.cards.cardsBySuit)) {
+    for(const [suit, cards] of Object.entries(props.cards.cardsBySuit)) {
         if(marriages.includes(suit as Suit)) {
             continue;
         }
-        const l = (cards as Card[]).map((card: Card) => card.valueToString());
+        const l = (cards as Card[]).map((card: Card) => {return card.valueToString()});
         if(l.includes('Q') || l.includes('K')) {
             potentialMarriages.push(suit);
         }

@@ -79,7 +79,7 @@ export function getWinningCard(cards: ITrickCard[], marriage: null | Suit): ITri
     let winningP = cards[0].player;
     let bestCard = cards[0].card;
 
-    for(let tc of cards) {
+    for(const tc of cards) {
         let isBetter = false;
         if (marriage && tc.card.suit === marriage) {
             // this player played a trump
@@ -141,7 +141,7 @@ export function canPlayCard(hand: Hand, trick: ITrickCard[], card: Card): boolea
 export function getWinningBid(bidHistory: Bid[]): Bid | null {
     let contractPts = 0;
     let contractPlayer : string | null = null;
-    for(let bid of bidHistory) {
+    for(const bid of bidHistory) {
         if (bid.points > contractPts) {
             contractPts = bid.points;
             contractPlayer = bid.player;

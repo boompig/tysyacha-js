@@ -47,10 +47,10 @@ export class TestView extends PureComponent<ITestProps, ITestState> {
         this.onRoundOver = this.onRoundOver.bind(this);
     }
 
-    onRoundOver(scores: {[key: string]: number}, isEarlyExit: boolean) {
+    onRoundOver(scores: {[key: string]: number}, isEarlyExit: boolean): void {
         if(!isEarlyExit) {
             const newScores = Object.assign({}, this.state.scores);
-            for(let [name, pts] of Object.entries(scores)) {
+            for(const [name, pts] of Object.entries(scores)) {
                 newScores[name][this.state.round] += pts;
             }
             this.setState({
@@ -61,13 +61,12 @@ export class TestView extends PureComponent<ITestProps, ITestState> {
         }
     }
 
-    render() {
+    render(): JSX.Element {
         return (<main className="container">
             <ScoreView
                 round={this.state.round}
                 playerNames={this.state.playerNames}
-                scores={this.state.scores}
-                />
+                scores={this.state.scores} />
             <TestRoundView
                 playerNames={this.state.playerNames}
                 dealerIndex={this.state.dealerIndex}

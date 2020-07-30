@@ -10,35 +10,35 @@ import {ServerView} from "./server/server-view";
 console.log(window.location.pathname);
 
 if(window.location.pathname === "/") {
-	window.location.href = "/lounge";
+    window.location.href = "/lounge";
 } else if(window.location.pathname === "/lounge") {
-	ReactDOM.render(
-		<React.StrictMode>
-			<Lounge />
-		</React.StrictMode>,
-		document.getElementById('root')
-	);
+    ReactDOM.render(
+        <React.StrictMode>
+            <Lounge />
+        </React.StrictMode>,
+        document.getElementById('root')
+    );
 } else if(window.location.pathname === "/test") {
-	ReactDOM.render(
-		<React.StrictMode>
-			<TestView />
-		</React.StrictMode>,
-		document.getElementById('root')
-	);
+    ReactDOM.render(
+        <React.StrictMode>
+            <TestView />
+        </React.StrictMode>,
+        document.getElementById('root')
+    );
 } else if(window.location.pathname === '/server') {
-	ReactDOM.render(
-		<React.StrictMode>
-			<ServerView />
-		</React.StrictMode>,
-		document.getElementById('root')
-	);
+    ReactDOM.render(
+        <React.StrictMode>
+            <ServerView />
+        </React.StrictMode>,
+        document.getElementById('root')
+    );
 } else {
-	ReactDOM.render(
-		<React.StrictMode>
-			<App />
-		</React.StrictMode>,
-		document.getElementById('root')
-	);
+    ReactDOM.render(
+        <React.StrictMode>
+            <App />
+        </React.StrictMode>,
+        document.getElementById('root')
+    );
 }
 
 // If you want your app to work offline and load faster, you can change

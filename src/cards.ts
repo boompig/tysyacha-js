@@ -28,7 +28,7 @@ export function getMarriageValue(suit: Suit): number {
         case Suit.SPADES:
             return 40;
     }
-};
+}
 
 /**
  * Suits are returned in the order they are displayed
@@ -133,7 +133,7 @@ export class Hand {
     }
 
     hasCard(needle: ICard): boolean {
-        for(let card of this.cards) {
+        for(const card of this.cards) {
             if(card.suit === needle.suit && card.value === needle.value) {
                 return true;
             }
@@ -143,7 +143,7 @@ export class Hand {
 
     _sortCardsBySuit(cards: Card[]): CardsBySuit {
         const cardsBySuit = {} as any;
-        for(let suit of getSuits()) {
+        for(const suit of getSuits()) {
             cardsBySuit[suit] = [] as Card[];
         }
 
@@ -151,7 +151,7 @@ export class Hand {
             cardsBySuit[card.suit].push(card);
         });
 
-        for(let cards of Object.values(cardsBySuit)) {
+        for(const cards of Object.values(cardsBySuit)) {
             // cards within a suit should be sorted by VALUE (descending)
             (cards as Card[]).sort((a: Card, b: Card) => {
                 return b.value - a.value;
@@ -163,8 +163,8 @@ export class Hand {
 
     _findMarriages(): Suit[] {
         const marriages: Suit[] = [];
-        for(let [suit, cards] of Object.entries(this.cardsBySuit)) {
-            const l = (cards as Card[]).map((card: Card) => card.valueToString());
+        for(const [suit, cards] of Object.entries(this.cardsBySuit)) {
+            const l = (cards as Card[]).map((card: Card) => {return card.valueToString()});
             const hasMarriage = (l.includes("Q") && l.includes("K"));
             if(hasMarriage) {
                 marriages.push(suit as Suit);
@@ -179,7 +179,7 @@ export class Hand {
      */
     getPoints(): number {
         let pts = 0;
-        for(let cards of Object.values(this.cardsBySuit)) {
+        for(const cards of Object.values(this.cardsBySuit)) {
             pts += (cards as Card[]).reduce((acc: number, cur: Card) => {
                 return acc + cur.value;
             }, 0);
@@ -200,8 +200,8 @@ export class Deck {
         this.cards = [];
 
         // create the deck
-        for(let suit of getSuits()) {
-            for(let value of getCardValues()) {
+        for(const suit of getSuits()) {
+            for(const value of getCardValues()) {
                 this.cards.push(new Card(value, suit));
             }
         }

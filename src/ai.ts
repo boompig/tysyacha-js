@@ -5,11 +5,11 @@ import {Hand, getMarriageValue} from "./cards";
  */
 export function scoreHand(hand: Hand): number {
     let score = 0;
-    for(let marriage of hand.marriages) {
+    for(const marriage of hand.marriages) {
         score += getMarriageValue(marriage);
     }
     // add up the score of the remaining cards
-    for(let card of hand.cards) {
+    for(const card of hand.cards) {
         score += card.value;
     }
     return score;

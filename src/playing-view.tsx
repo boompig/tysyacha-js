@@ -37,7 +37,7 @@ interface IProps {
     api: API;
 }
 
-export function PlayingView(props: IProps) {
+export function PlayingView(props: IProps): JSX.Element {
     const [numTricks, setNumTricks] = useState([] as number[]);
     const [currentTrick, setCurrentTrick] = useState([] as ITrickCard[]);
     const [marriage, setMarriage] = useState(null as Suit | null);
@@ -141,7 +141,7 @@ export function PlayingView(props: IProps) {
                 // work out what the current hand is, using past tricks
                 // these cards have been played
                 const playedCards = info.pastTricks.map((trick: IPastTrick) => {
-                    for(let {card, player} of trick.trick) {
+                    for(const {card, player} of trick.trick) {
                         if (player === props.name) {
                             return cardToString(card);
                         }
@@ -202,10 +202,10 @@ export function PlayingView(props: IProps) {
 
         <h3>Play Card</h3>
         { turn === props.name ?
-            <form onSubmit={(e) => onPlayCard(e)}>
+            <form onSubmit={(e) => {return onPlayCard(e)}}>
                 <label htmlFor='card'>Card</label>
                 <select name='card' className='form-control' required={true}
-                    onChange={(e) => selectCard(e)}>{ cardOptions }</select>
+                    onChange={(e) => {return selectCard(e)}}>{ cardOptions }</select>
                 <button type='submit' className='btn btn-primary form-control'>Play Card</button>
             </form>:
             <div>Waiting for {turn} to play a card...</div> }

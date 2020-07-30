@@ -23,7 +23,7 @@ interface IScoringViewState {
 }
 
 export class RoundScoringView extends React.PureComponent<IScoringViewProps, IScoringViewState> {
-    render() {
+    render(): JSX.Element {
         if(!this.props.declaredMarriages) {
             throw new Error('declared marriages is null');
         }
@@ -77,7 +77,7 @@ export class RoundScoringView extends React.PureComponent<IScoringViewProps, ISc
             </div>
             { this.props.onFinish ?
                 <button type="button" className="btn btn-primary btn-lg"
-                    onClick={(e) => this.props.onFinish ? this.props.onFinish(finalPoints) : null}>Start Next Round</button> :
+                    onClick={(e) => {return this.props.onFinish ? this.props.onFinish(finalPoints) : null}}>Start Next Round</button> :
                 null }
         </div>);
     }

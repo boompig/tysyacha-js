@@ -25,7 +25,7 @@ interface IScoreViewProps {
     selectedRound?: number;
 }
 
-export function ScoreView(props: IScoreViewProps) {
+export function ScoreView(props: IScoreViewProps): JSX.Element {
     const [isCollapsed, setCollapsed] = useState(props.isCollapsed ? true : false);
 
     function toggleCollapsed(e: React.SyntheticEvent) {
@@ -58,7 +58,7 @@ export function ScoreView(props: IScoreViewProps) {
         <h2>
             <a href="#scoring-table" role="button" data-toggle="collapse" data-target="#scoring-table"
                 aria-expanded={!isCollapsed} aria-controls="#scoring-table"
-                onClick={(e) => toggleCollapsed(e)}>
+                onClick={(e) => {return toggleCollapsed(e)}}>
                 <span>Player Scores</span>
                 { isCollapsed ? <span>&nbsp;(collapsed)</span> : null }
             </a>
@@ -74,7 +74,7 @@ export function ScoreView(props: IScoreViewProps) {
                 <tbody>
                     { scoreRows }
                 </tbody>
-        </table> }
+            </table> }
     </div>)
 }
 

@@ -35,7 +35,7 @@ export function DistributeCardsView(props: IProps) {
 
     // for this view, add the treasure to the current hand
     const cardsCopy = props.hand.cards.slice();
-    for (let card of props.treasure) {
+    for (const card of props.treasure) {
         cardsCopy.push(card);
     }
     const bigHand = new Hand(cardsCopy);
@@ -52,14 +52,14 @@ export function DistributeCardsView(props: IProps) {
         cardOptions[p] = bigHand.cards.map((card: Card, i: number) => {
             return <option value={i} key={i}>{ card.toString() }</option>;
         })
-        .filter((item: any, i: number) => {
-            if (p === 0 && i === distCard1) {
-                return false;
-            } else if (p === 1 && i === distCard0) {
-                return false;
-            }
-            return true;
-        });
+            .filter((item: any, i: number) => {
+                if (p === 0 && i === distCard1) {
+                    return false;
+                } else if (p === 1 && i === distCard0) {
+                    return false;
+                }
+                return true;
+            });
         cardOptions[p].splice(0, 0,
             <option value={-1} key={-1}>-- select one --</option>
         );
@@ -88,6 +88,7 @@ export function DistributeCardsView(props: IProps) {
             return i !== distCard0 && i !== distCard1;
         });
 
+        // eslint-disable-next-line
         props.onDistribute(distributeMap, keptCards);
     }
 
@@ -100,18 +101,18 @@ export function DistributeCardsView(props: IProps) {
             phase={GamePhase.DISTRIBUTE_CARDS} />
 
         <h3>Cards to Give Away</h3>
-        <form onSubmit={(e) => onSubmit(e)}>
+        <form onSubmit={(e) => {return onSubmit(e)}}>
             <fieldset>
                 <label htmlFor='distribute-card-0'>{ otherPlayers[0] }</label>
                 <select className='form-control' name='distribute-card-0' value={distCard0}
-                    onChange={(e) => onDistCardChange(e, 0)}>
+                    onChange={(e) => {return onDistCardChange(e, 0)}}>
                     { cardOptions[0] }
                 </select>
             </fieldset>
             <fieldset>
                 <label htmlFor='distribute-card-1'>{ otherPlayers[1] }</label>
                 <select className='form-control' name='distribute-card-1' value={distCard1}
-                    onChange={(e) => onDistCardChange(e, 1)}>
+                    onChange={(e) => {return onDistCardChange(e, 1)}}>
                     { cardOptions[1] }
                 </select>
             </fieldset>

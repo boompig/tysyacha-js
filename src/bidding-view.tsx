@@ -25,14 +25,14 @@ export class BiddingHistoryView extends React.PureComponent<IBiddingHistoryViewP
         this.toggleCollapse = this.toggleCollapse.bind(this);
     }
 
-    toggleCollapse(e: React.SyntheticEvent) {
+    toggleCollapse(e: React.SyntheticEvent): void {
         e.preventDefault();
         this.setState({
             isCollapsed: !this.state.isCollapsed,
         });
     }
 
-    render() {
+    render(): JSX.Element {
         const highestBid = getWinningBid(this.props.bids);
         const bidRows = this.props.bids.map((bid: Bid, i: number) => {
             return <tr key={`}bid-row-${i}`}>
@@ -58,7 +58,7 @@ export class BiddingHistoryView extends React.PureComponent<IBiddingHistoryViewP
         return (<div className="bid-history-container">
             <h2>
                 <a href="#bid-collpase" role="button"
-                    onClick={(e) => this.toggleCollapse(e)}>
+                    onClick={(e) => {return this.toggleCollapse(e)}}>
                     <span>Bids</span>
                     <span>{ this.state.isCollapsed ? "(collapsed)" : ""}</span>
                 </a>
@@ -98,7 +98,7 @@ interface IProps {
 /**
  * This view handles the bidding process
  */
-export function BiddingView(props: IProps) {
+export function BiddingView(props: IProps): JSX.Element {
     const [bids, setBids] = useState([] as Bid[]);
     const [biddingPlayer, setBiddingPlayer] = useState(-1);
     const [isSubscribed, setSubscribed] = useState(false);
@@ -140,7 +140,7 @@ export function BiddingView(props: IProps) {
                 setPassedPlayers(newPassedPlayers);
             }
             if(bidHistory.length > 0) {
-                let newHighestBid = Math.max(...bidHistory.map((bid: Bid) => {
+                const newHighestBid = Math.max(...bidHistory.map((bid: Bid) => {
                     return bid.points;
                 }));
                 setHighestBid(newHighestBid);
@@ -150,6 +150,7 @@ export function BiddingView(props: IProps) {
             if(nextPhase !== GamePhase.BIDDING) {
                 console.log(`we're done with bidding phase. next phase is ${nextPhase}`);
                 const winningBid = getWinningBid(bids);
+                // eslint-disable-next-line
                 props.onNextPhase(winningBid);
             }
         }
@@ -231,16 +232,16 @@ export function BiddingView(props: IProps) {
             <div>
                 <h4>Your Bid</h4>
                 { errorText ? <div className='alert alert-danger' role='alert'>{ errorText}</div> : null }
-                <form className='bidding-form' onSubmit={(e) => handleBidSubmit(e, false)}>
+                <form className='bidding-form' onSubmit={(e) => {return handleBidSubmit(e, false)}}>
                     <label htmlFor='bid'>Bid</label>
                     <input type='number' min={100} max={400} name='bid'
                         placeholder='enter your bid here'
                         className='form-control'
-                        onChange={(e) => handleBidChange(e) }/>
+                        onChange={(e) => {return handleBidChange(e)} }/>
                     <button type='button' className='btn btn-danger'
-                        onClick={(e) => handleBidSubmit(e, true)}>Pass</button>
+                        onClick={(e) => {return handleBidSubmit(e, true)}}>Pass</button>
                     <button type='button' className='btn btn-primary'
-                        onClick={(e) => handleBidSubmit(e, false)}
+                        onClick={(e) => {return handleBidSubmit(e, false)}}
                         disabled={(bidPoints <= highestBid) || passedPlayers.includes(props.name)}>Submit</button>
                 </form>
             </div> : null}

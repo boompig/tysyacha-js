@@ -20,7 +20,7 @@ interface IProps {
 }
 
 
-export function RevealTreasureView(props: IProps) {
+export function RevealTreasureView(props: IProps): JSX.Element {
     const [bidPoints, setBidPoints] = useState(props.winningBid.points);
 
     function handleBidChange(e: ChangeEvent<HTMLInputElement>) {
@@ -29,6 +29,7 @@ export function RevealTreasureView(props: IProps) {
 
     function handleBidSubmit(e: React.FormEvent) {
         e.preventDefault();
+        // eslint-disable-next-line
         props.onSetFinalContract(bidPoints);
     }
 
@@ -38,7 +39,7 @@ export function RevealTreasureView(props: IProps) {
         </span>;
     });
 
-    let winningBid = props.winningBid.player === props.name ?
+    const winningBid = props.winningBid.player === props.name ?
         <div>
             <h3>Current Bid</h3>
             <div>Your winning bid was {props.winningBid.points}</div>
@@ -48,12 +49,12 @@ export function RevealTreasureView(props: IProps) {
     if (props.winningBid.player === props.name) {
         finalContractForm = <div>
             <h3>Final Contract</h3>
-            <form className='bidding-form' onSubmit={(e) => handleBidSubmit(e)}>
+            <form className='bidding-form' onSubmit={(e) => {return handleBidSubmit(e)}}>
                 <label htmlFor='bid'>Bid</label>
                 <input type='number' min={props.winningBid.points} max={400} name='bid'
                     placeholder='enter your final contract here'
                     className='form-control'
-                    onChange={(e) => handleBidChange(e) }
+                    onChange={(e) => {return handleBidChange(e)} }
                     value={bidPoints} />
                 <button type='submit' className='btn btn-primary'
                     disabled={(bidPoints < props.winningBid.points)}>Submit</button>

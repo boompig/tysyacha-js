@@ -16,11 +16,11 @@ interface IBidProps {
     bids: Bid[];
 }
 
-export function BidView(props: IBidProps) {
+export function BidView(props: IBidProps): JSX.Element {
     if(props.bids.length === 0) {
         return <div>no bids</div>;
     }
-    let bids = props.bids.map((bid: Bid, i: number) => {
+    const bids = props.bids.map((bid: Bid, i: number) => {
         return (<div key={`bid-${i}`}>
             Player {bid.player + 1} bid {bid.points === 0 ? "pass" : bid.points}
         </div>);
@@ -86,7 +86,7 @@ export class GameView extends React.Component<IGameViewProps, IGameViewState> {
         this.getPlayerNames = this.getPlayerNames.bind(this);
     }
 
-    sendHeartbeat() {
+    sendHeartbeat(): void {
         this.props.api.sendMessage(MessageType.JOIN_GAME, {
             gameId: this.props.gameId,
             username: this.props.name,
@@ -97,7 +97,7 @@ export class GameView extends React.Component<IGameViewProps, IGameViewState> {
         }, HEARTBEAT_INTERVAL);
     }
 
-    startHeartbeatTimer() {
+    startHeartbeatTimer(): void {
         this.sendHeartbeat();
     }
 
@@ -113,7 +113,7 @@ export class GameView extends React.Component<IGameViewProps, IGameViewState> {
         return players;
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
         this.props.api.addMessageListener([MessageType.GAME_SEEDS], (data: any) => {
             console.log(`Got game seeds from server for game ${data.gameId}:`);
             console.log(data);
@@ -121,7 +121,7 @@ export class GameView extends React.Component<IGameViewProps, IGameViewState> {
                 const seeds: any = {};
                 let scores: any = {};
                 // make sure that the seeds are in the right format
-                for(let [user, seed] of Object.entries(data.seeds)) {
+                for(const [user, seed] of Object.entries(data.seeds)) {
                     if(typeof seed === 'number') {
                         seeds[user] = seed;
                     } else {
@@ -133,7 +133,7 @@ export class GameView extends React.Component<IGameViewProps, IGameViewState> {
                     scores = data.scores;
                 } else {
                     // otherwise all scores are zeros
-                    for(let user of Object.keys(seeds)) {
+                    for(const user of Object.keys(seeds)) {
                         scores[user] = [0];
                     }
                 }
@@ -171,7 +171,7 @@ export class GameView extends React.Component<IGameViewProps, IGameViewState> {
         this.startHeartbeatTimer();
     }
 
-    render() {
+    render(): JSX.Element {
         return (<div className='game-view'>
             <ScoreView scores={this.state.scores}
                 playerNames={this.state.playerNames}

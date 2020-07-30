@@ -6,7 +6,7 @@ interface IGameLobbyProps {
     gameId: string | null;
 }
 
-export function GameLobby(props: IGameLobbyProps) {
+export function GameLobby(props: IGameLobbyProps): JSX.Element {
 
     const users = [...props.waitingUsers, props.name].map((username: string, i: number) => {
         if(username === props.name) {
