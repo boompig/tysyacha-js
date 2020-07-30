@@ -20,7 +20,7 @@ interface IState {
     /**
      * Fetched from server
      */
-    games: string[];
+    games: {[key: string]: IGameInfo};
 
     api: API;
 
@@ -65,7 +65,7 @@ export class ServerView extends React.PureComponent<IProps, IState> {
             // none selected
             round: -1,
 
-            games: [],
+            games: {},
 
             api: new API(),
 

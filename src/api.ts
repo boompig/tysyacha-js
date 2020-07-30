@@ -145,7 +145,10 @@ export interface ICreateGameResponse {
 }
 
 export interface IAdminResponse {
-    games: string[];
+    /**
+     * Map from gameID to GameInfo
+     */
+    games: {[key: string]: IGameInfo};
 }
 
 export interface IGameInfo {
@@ -196,7 +199,7 @@ export class API {
         this.socket = new WebSocket(WEBSOCKET_SERVER);
     }
 
-    async getJSON(path: string, query?: {[key: string]: any}) {
+    async getJSON(path: string, query?: {[key: string]: any}, userHeaders?: {[key: string]: string}) {
         const url = new URL(HTTP_SERVER);
         url.pathname = path;
         if(query) {
@@ -204,28 +207,42 @@ export class API {
                 url.searchParams.append(k, v);
             }
         }
+
+        const headers = {
+            'Content-Type': 'application/json',
+        } as {[key: string]: string};
+        if(userHeaders) {
+            for(let [key, val] of Object.entries(userHeaders)) {
+                headers[key] = val;
+            }
+        }
+
         return fetch(url.toString(), {
-            // credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers,
             method: 'GET',
             mode: 'cors',
         });
     }
 
-    async postJSON(path: string, data?: any) {
+    async postJSON(path: string, data?: any, userHeaders?: {[key: string]: string}) {
         if(!data) {
             data = {};
         }
         const url = new URL(HTTP_SERVER);
         url.pathname = path;
+
+        const headers = {
+            'Content-Type': 'application/json',
+        } as {[key: string]: string};
+        if(userHeaders) {
+            for(let [key, val] of Object.entries(userHeaders)) {
+                headers[key] = val;
+            }
+        }
+
         return fetch(url.toString(), {
             body: JSON.stringify(data),
-            // credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers,
             method: 'POST',
             mode: 'cors',
         });
@@ -391,8 +408,8 @@ export class API {
     /** ******** Admin APIs *********** */
 
     async adminGetGames(): Promise<IAdminResponse> {
-        const r = await this.getJSON('/admin', {
-            API_KEY: ADMIN_API_KEY,
+        const r = await this.getJSON('/admin', {}, {
+            Authorization: `Bearer ${ADMIN_API_KEY}`,
         });
         if (r.ok) {
             const j = await r.json();
@@ -404,8 +421,8 @@ export class API {
     }
 
     async adminGetGameInfo(gameId: string): Promise<IAdminGameResponse> {
-        const r = await this.getJSON(`/admin/game/${gameId}`, {
-            API_KEY: ADMIN_API_KEY,
+        const r = await this.getJSON(`/admin/game/${gameId}`, {}, {
+            Authorization: `Bearer ${ADMIN_API_KEY}`,
         });
         if (r.ok) {
             const j = (await r.json()) as IAdminGameResponse;

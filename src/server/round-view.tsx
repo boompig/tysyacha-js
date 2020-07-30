@@ -8,9 +8,10 @@ import { PlayerView } from "../player-view";
 import { CurrentTrickView } from "../playing-view";
 import ScoreView from "../score-view";
 import { ApiView } from './api-view';
-import { GameInfoView } from "./game-view";
+import { GameInfoView, AdminPlayerView } from "./game-view";
 import { PastTricksView } from "./past-tricks-view";
 import { AdminTreasureView } from "./admin-treasure-view";
+import { RevealTreasureView } from "./reveal-treasure-view";
 
 interface IProps {
     roundInfo: IRoundInfo;
@@ -178,16 +179,16 @@ export class RoundView extends React.PureComponent<IRoundViewProps, IRoundViewSt
                     <span className="badge badge-danger">Round Over</span>
                 </h3>}
 
-            {/* <AdminPlayerView
-                playerNames={this.props.playerNames}
-                isCollapsed={true} /> */}
-            {/* send the game's round */}
-            <ScoreView
-                round={this.props.gameInfo.round}
-                selectedRound={this.props.round}
-                scores={this.props.gameInfo.scores}
-                playerNames={this.props.playerNames}
-                isCollapsed={this.props.roundInfo.phase !== GamePhase.SCORING && this.props.roundInfo.phase !== GamePhase.NOT_DEALT} />
+            { this.props.gameInfo.hasStarted ?
+                <ScoreView
+                    round={this.props.gameInfo.round}
+                    selectedRound={this.props.round}
+                    scores={this.props.gameInfo.scores}
+                    playerNames={this.props.playerNames}
+                    isCollapsed={this.props.roundInfo.phase !== GamePhase.SCORING && this.props.roundInfo.phase !== GamePhase.NOT_DEALT} />:
+                <AdminPlayerView
+                    playerNames={this.props.playerNames}
+                    isCollapsed={false} /> }
             <GameInfoView
                 gameInfo={this.props.gameInfo}
                 isCollapsed={true} />
@@ -199,7 +200,7 @@ export class RoundView extends React.PureComponent<IRoundViewProps, IRoundViewSt
 
             { this.props.roundInfo.phase > GamePhase.NOT_DEALT ?
                 <BiddingHistoryView
-                    isCollapsed={this.props.roundInfo.phase === GamePhase.PLAYING}
+                    isCollapsed={this.props.roundInfo.phase === GamePhase.PLAYING || this.props.roundInfo.phase === GamePhase.SCORING}
                     bids={this.props.bidHistory} /> : null }
 
             {this.props.playingPhaseInfo && this.props.roundInfo.phase >= GamePhase.PLAYING && this.props.roundInfo.phase < GamePhase.SCORING ?
@@ -224,6 +225,15 @@ export class RoundView extends React.PureComponent<IRoundViewProps, IRoundViewSt
 
                     {players}
                 </div> : null}
+
+            { this.props.roundInfo.phase === GamePhase.REVEAL_TREASURE && this.props.cards && this.props.roundInfo.winningBid ?
+                <RevealTreasureView
+                    playerNames={this.props.playerNames}
+                    playerHands={this.props.cards.playerCards}
+                    treasure={this.props.cards.treasure}
+                    dealerIndex={this.props.playerNames.indexOf(this.props.roundInfo.dealer)}
+                    contractPlayerIndex={this.props.playerNames.indexOf(this.props.roundInfo.winningBid.player)}
+                     /> : null }
 
             { roundScoringView }
 

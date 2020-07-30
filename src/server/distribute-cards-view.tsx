@@ -50,29 +50,34 @@ export class DistributeCardsView extends React.PureComponent<IProps, IState> {
     render() {
         const cards = this.props.contractPlayerCards.cards.slice();
         cards.push(...this.props.treasureCards);
+        const bigHand = new Hand(cards);
 
-        const cardElems = cards.map((card: Card, i: number) => {
-            const isSelected = Object.values(this.props.selectedCards).includes(card);
-            let targetPlayer = null;
-            if (isSelected) {
-                // find the corresponding player name
-                for(let [name, otherCard] of Object.entries(this.props.selectedCards)) {
-                    if(card === otherCard) {
-                        targetPlayer = name;
+        const cardElems = [] as JSX.Element[];
+        Object.entries(bigHand.cardsBySuit).forEach(([suit, cards]) => {
+            cards.forEach((card: Card, i: number) => {
+                const isSelected = Object.values(this.props.selectedCards).includes(card);
+                let targetPlayer = null;
+                if (isSelected) {
+                    // find the corresponding player name
+                    for (let [name, otherCard] of Object.entries(this.props.selectedCards)) {
+                        if (card === otherCard) {
+                            targetPlayer = name;
+                        }
                     }
                 }
-            }
-            return (<div key={`distribute-card-container-${i}`}>
-                <CardView key={`distribute-card-${i}`}
-                    suit={card.suit}
-                    value={card.value}
-                    classNames={isSelected ? ["card-selected"] : []}
-                    onClick={(e) => this.onSelect(card)} />
-                { targetPlayer ?
-                    <div className="target-player">sending to {targetPlayer}</div>
-                    : null}
-            </div>);
-        });
+                const elem = (<div key={`distribute-card-container-${suit}-${i}`}>
+                    <CardView key={`distribute-card-${i}`}
+                        suit={card.suit}
+                        value={card.value}
+                        classNames={isSelected ? ["card-selected"] : []}
+                        onClick={(e) => this.onSelect(card)} />
+                    {targetPlayer ?
+                        <div className="target-player">sending to {targetPlayer}</div>
+                        : null}
+                </div>);
+                cardElems.push(elem);
+            });
+        })
 
         const playerButtons = this.props.playerNames.filter((name: string) => {
             return name !== this.props.contractPlayer;
