@@ -8,6 +8,7 @@ const api = new API();
 
 interface INameProps {
     onNameSet(name: string): void;
+    errorMsg?: string;
 }
 
 function LoungeNameForm(props: INameProps) {
@@ -33,8 +34,18 @@ function LoungeNameForm(props: INameProps) {
         }
     }
 
+    let errorAlert = null;
+    if (props.errorMsg) {
+        errorAlert = (
+            <div className="alert alert-danger">
+                <strong>error!</strong>&nbsp;{props.errorMsg}
+            </div>);
+    }
+
     return (<div>
         <h1>Welcome to the Tysyacha Lounge</h1>
+
+        {errorAlert}
 
         <p>Please enter your name to continue</p>
         <form className='name-form' onSubmit={(e) => onNameSubmit(e)}>
@@ -128,10 +139,14 @@ interface ILoungeState {
     showGameCreation: boolean;
     showGameJoin: boolean;
     newGameId: string | null;
+    isSocketError: boolean;
 }
 
 interface ILoungeProps {}
 
+/**
+ * This is the component rendered when user first connects to the server
+ */
 class Lounge extends React.Component<ILoungeProps, ILoungeState> {
     constructor(props: ILoungeProps) {
         super(props);
@@ -141,20 +156,29 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
             loungeUsers: [],
             showGameCreation: false,
             showGameJoin: false,
-            newGameId: null
+            newGameId: null,
+            isSocketError: false,
         };
 
         this.handleNameSet = this.handleNameSet.bind(this);
         this.onWebSocketMessage = this.onWebSocketMessage.bind(this);
         this.showCreateGame = this.showCreateGame.bind(this);
         this.handleGameCreated = this.handleGameCreated.bind(this);
+        this.createAiGame = this.createAiGame.bind(this);
     }
 
     componentDidMount() {
         document.title = 'Tysyacha Lounge';
         api.socket.onmessage = this.onWebSocketMessage;
+        api.socket.onerror = (event: Event) => {
+            console.error('Observed error in API websocket:');
+            console.error(event);
+            this.setState({
+                isSocketError: true,
+            });
+        };
         api.socket.onopen = (event: Event) => {
-            console.log('socket opened');
+            console.log('API websocket opened successfully');
             // once connected, request users
             if(this.state.name) {
                 joinLounge(this.state.name, false);
@@ -170,12 +194,18 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
     }
 
     handleGameCreated(gameId: string) {
+        if(!this.state.name) {
+            throw new Error('name must be set in this method');
+        }
         this.setState({
             newGameId: gameId,
         });
     }
 
     onWebSocketMessage(event: MessageEvent) {
+        this.setState({
+            isSocketError: false,
+        });
         console.log('Received message over websocket:');
         if(event.data) {
             const j = JSON.parse(event.data);
@@ -219,6 +249,21 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
         });
     }
 
+    createAiGame(): void {
+        if(!this.state.name) {
+            throw new Error('must have name to use this method');
+        }
+        api.createGame(this.state.name, {
+            isComputerOnly: true,
+        }).then((createGameData: ICreateGameResponse) => {
+            if(!this.state.name) {
+                throw new Error('must have name to use this method');
+            }
+            leaveLounge(this.state.name);
+            window.location.href = `/game?gameid=${createGameData.gameId}`;
+        });
+    }
+
     render(): JSX.Element {
         if(this.state.showGameCreation && this.state.name) {
             return (<main className='container'>
@@ -244,9 +289,11 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
 
                 <div className='btn-container'>
                     <button type='button' className='btn btn-lg btn-primary'
-                        onClick={() => this.showCreateGame(true)}>Create Game</button>
+                        onClick={() => this.showCreateGame(true)}>Play vs Friends</button>
+                    <button type='button' className='btn btn-lg btn-info'
+                        onClick={() => this.createAiGame()}>Play vs Computer</button>
                     <button type='button' className='btn btn-lg btn-secondary'
-                        onClick={() => this.showJoinGame(true)}>Join Game</button>
+                        onClick={() => this.showJoinGame(true)}>Join Existing Game</button>
                 </div>
 
                 <h2>Other People in Lounge</h2>

@@ -4,7 +4,7 @@ import './App.css';
 import {GameView} from './game-view'
 import {GameLobby} from './lobby';
 import {readNameCookie} from './name-cookie';
-import {API, MessageType} from './api';
+import {API, MessageType, IGameInfo} from './api';
 
 
 const api = new API();
@@ -85,8 +85,15 @@ function App(): JSX.Element {
             return;
         }
 
+        console.log(`getting game info for game ${gameId}...`);
+        api.getGameInfo(name, gameId)
+            .then((gameInfo: IGameInfo) => {
+                console.log('game info:');
+                console.log(gameInfo);
+            });
+
         api.socket.onopen = (e: Event) => {
-            console.log('Connected to websocket');
+            console.log('Connected to API websocket');
             api.addMessageListener([MessageType.GAME_USERS], onGameUsers);
             joinGame(gameId, name);
         };

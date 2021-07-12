@@ -160,6 +160,10 @@ export interface IGameInfo {
      * Map from player names to their scores in each number
      */
     scores: {[key: string]: number[]};
+    /**
+     * True iff this game was created to play against the computer/AI
+     */
+    isComputerOnly: boolean;
 }
 
 export interface IRoundInfo {
@@ -391,12 +395,31 @@ export class API {
         return r;
     }
 
-    async createGame(username: string): Promise<ICreateGameResponse> {
-        const r = await this.postJSON('/game/new', {
+    async createGame(username: string, options?: any): Promise<ICreateGameResponse> {
+        const data : any = {
             username,
-        });
+        };
+        if (options) {
+            for (const [k, v] of Object.entries(options)) {
+                data[k] = v;
+            }
+        }
+        const r = await this.postJSON('/game/new', data);
         const j = await r.json();
         return j as ICreateGameResponse;
+    }
+
+    async getGameInfo(username: string, gameId: string): Promise<IGameInfo> {
+        const r = await this.getJSON(`/game/${gameId}`, {
+            username,
+        });
+        if (r.ok) {
+            const j = await r.json();
+            return j as IGameInfo;
+        } else {
+            console.error(r);
+            throw new Error(await r.text());
+        }
     }
 
     async postEndRound(gameId: string, round: number, username: string): Promise<Response> {

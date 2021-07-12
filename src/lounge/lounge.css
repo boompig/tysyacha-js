@@ -11,8 +11,8 @@ main {
     padding-bottom: 3vh;
 }
 
-.btn-container button:first-of-type {
-    margin-right: 1rem;
+.btn-container button:not(:first-of-type) {
+    margin-left: 1rem;
 }
 
 .create-game-view button, .create-game-view a, .join-game-view a, .join-game-view button {
