@@ -7,18 +7,18 @@ import Lounge from "./lounge/lounge";
 import {TestView} from "./test-view";
 import {ServerView} from "./server/server-view";
 
-console.log(window.location.pathname);
+console.debug(`path: ${window.location.pathname}`);
 
-if(window.location.pathname === "/") {
-    window.location.href = "/lounge";
-} else if(window.location.pathname === "/lounge") {
+if(window.location.pathname === '/') {
+    window.location.href = '/lounge';
+} else if(window.location.pathname === '/lounge') {
     ReactDOM.render(
         <React.StrictMode>
             <Lounge />
         </React.StrictMode>,
         document.getElementById('root')
     );
-} else if(window.location.pathname === "/test") {
+} else if(window.location.pathname === '/test') {
     ReactDOM.render(
         <React.StrictMode>
             <TestView />
@@ -32,11 +32,16 @@ if(window.location.pathname === "/") {
         </React.StrictMode>,
         document.getElementById('root')
     );
-} else {
+} else if (window.location.pathname === '/game') {
     ReactDOM.render(
         <React.StrictMode>
             <App />
         </React.StrictMode>,
+        document.getElementById('root')
+    );
+} else {
+    ReactDOM.render(
+        <p>Unknown path</p>,
         document.getElementById('root')
     );
 }

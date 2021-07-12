@@ -146,6 +146,7 @@ interface ILoungeProps {}
 
 /**
  * This is the component rendered when user first connects to the server
+ * Handles username registration and game creation
  */
 class Lounge extends React.Component<ILoungeProps, ILoungeState> {
     constructor(props: ILoungeProps) {

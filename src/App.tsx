@@ -14,9 +14,14 @@ function readGameId(): string | null {
     return u.searchParams.get('gameid') || null;
 }
 
+/**
+ * This component is the parent component of the game view
+ * Shows all things related to the game
+ */
 function App(): JSX.Element {
     /**
 	 * True iff there are 3 players who have joined this game
+     * OR if this is a computer-only game
 	 */
     const [hasStarted, setHasStarted] = useState(false);
     const [gameId, setGameId] = useState(null as string | null);
@@ -55,12 +60,12 @@ function App(): JSX.Element {
         }
 
         async function joinGame (gameId: string, username: string) {
-            console.log(`joining game ${gameId}...`);
+            console.debug(`joining game ${gameId}...`);
             const r = await api.joinGame(gameId, username);
             if (r.ok) {
                 const j = await r.json();
-                console.log('Game details:');
-                console.log(j);
+                console.debug('Game details:');
+                console.debug(j);
             } else {
                 console.error('Failed to join game')
             }
@@ -85,15 +90,15 @@ function App(): JSX.Element {
             return;
         }
 
-        console.log(`getting game info for game ${gameId}...`);
+        console.debug(`getting game info for game ${gameId}...`);
         api.getGameInfo(name, gameId)
             .then((gameInfo: IGameInfo) => {
-                console.log('game info:');
-                console.log(gameInfo);
+                console.debug('game info:');
+                console.debug(gameInfo);
             });
 
         api.socket.onopen = (e: Event) => {
-            console.log('Connected to API websocket');
+            console.debug('Connected to API websocket');
             api.addMessageListener([MessageType.GAME_USERS], onGameUsers);
             joinGame(gameId, name);
         };
