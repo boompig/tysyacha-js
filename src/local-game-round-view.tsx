@@ -9,6 +9,14 @@ import { BiddingView } from "./local-components/bidding-view";
 import { RevealTreasureView } from "./local-components/reveal-treasure-view";
 
 interface ITestRoundProps {
+    /**
+     * True iff we want to show all players' cards, not just the human player's
+     */
+    isAllCardsShown: boolean;
+    /**
+     * Which player is the local player (the one who is in control)
+     */
+    localPlayerIndex: number;
     playerNames: string[];
     dealerIndex: number;
     onRoundOver: (scores: {[key: string]: number}, isEarlyExit: boolean) => any;
@@ -44,7 +52,7 @@ interface ITestRoundState {
 /**
  * This is the game.
  */
-export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundState> {
+export class LocalGameRoundView extends PureComponent<ITestRoundProps, ITestRoundState> {
     constructor(props: ITestRoundProps) {
         super(props);
 
@@ -407,7 +415,8 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
                 isActivePlayer={i === this.state.activePlayerIndex}
                 tricksTaken={this.state.tricksTaken[name]}
                 onCardSelect={this.onPlayCard}
-                numTricksTaken={this.state.tricksTaken[name].length} />
+                numTricksTaken={this.state.tricksTaken[name].length}
+                showCards={this.props.isAllCardsShown || (i === this.props.localPlayerIndex)} />
         });
 
         const trick = this.state.currentTrick.map((trickCard: ITrickCard, i: number) => {
@@ -429,7 +438,8 @@ export class TestRoundView extends PureComponent<ITestRoundProps, ITestRoundStat
                     playerNames={this.props.playerNames}
                     dealerIndex={this.props.dealerIndex}
                     playerHands={this.state.playerHands}
-                    onNextPhase={this.handleCompleteBidding} />
+                    onNextPhase={this.handleCompleteBidding}
+                    localPlayerIndex={this.props.localPlayerIndex} />
             }
             case GamePhase.REVEAL_TREASURE: {
                 return <RevealTreasureView

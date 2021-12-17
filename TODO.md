@@ -1,4 +1,6 @@
-# Note To Self
+# Notes To Self
+
+*last updated July 8, 2021*
 
 1. You can access the serverless deployment at /test when running the react scripts.
 This can help test the local components without relying on the server

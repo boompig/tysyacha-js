@@ -4,46 +4,53 @@ import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 import Lounge from "./lounge/lounge";
-import {TestView} from "./test-view";
+import {LocalGameView} from "./local-game-view";
 import {ServerView} from "./server/server-view";
 
 console.debug(`path: ${window.location.pathname}`);
 
-if(window.location.pathname === '/') {
-    window.location.href = '/lounge';
-} else if(window.location.pathname === '/lounge') {
-    ReactDOM.render(
-        <React.StrictMode>
-            <Lounge />
-        </React.StrictMode>,
-        document.getElementById('root')
-    );
-} else if(window.location.pathname === '/test') {
-    ReactDOM.render(
-        <React.StrictMode>
-            <TestView />
-        </React.StrictMode>,
-        document.getElementById('root')
-    );
-} else if(window.location.pathname === '/server') {
-    ReactDOM.render(
-        <React.StrictMode>
-            <ServerView />
-        </React.StrictMode>,
-        document.getElementById('root')
-    );
-} else if (window.location.pathname === '/game') {
-    ReactDOM.render(
-        <React.StrictMode>
-            <App />
-        </React.StrictMode>,
-        document.getElementById('root')
-    );
-} else {
-    ReactDOM.render(
-        <p>Unknown path</p>,
-        document.getElementById('root')
-    );
+switch (window.location.pathname) {
+    case '/':
+        window.location.href = '/local-ai-game';
+        break;
+    case '/lounge':
+        ReactDOM.render(
+            <React.StrictMode>
+                <Lounge />
+            </React.StrictMode>,
+            document.getElementById('root')
+        );
+        break;
+    case '/local-ai-game':
+        ReactDOM.render(
+            <React.StrictMode>
+                <LocalGameView />
+            </React.StrictMode>,
+            document.getElementById('root')
+        );
+        break;
+    case '/server':
+        ReactDOM.render(
+            <React.StrictMode>
+                <ServerView />
+            </React.StrictMode>,
+            document.getElementById('root')
+        );
+        break;
+    case '/game':
+        ReactDOM.render(
+            <React.StrictMode>
+                <App />
+            </React.StrictMode>,
+            document.getElementById('root')
+        );
+        break;
+    default:
+        ReactDOM.render(
+            <p>Unknown path</p>,
+            document.getElementById('root')
+        );
+        break;
 }
 
 // If you want your app to work offline and load faster, you can change

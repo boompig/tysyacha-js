@@ -25,6 +25,9 @@ interface IScoreViewProps {
     selectedRound?: number;
 }
 
+/**
+ * Shows the scores for all players across all rounds of the game
+ */
 export function ScoreView(props: IScoreViewProps): JSX.Element {
     const [isCollapsed, setCollapsed] = useState(props.isCollapsed ? true : false);
 

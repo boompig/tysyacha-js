@@ -216,7 +216,9 @@ export class ApiView extends React.PureComponent<IProps, IState> {
                 isActivePlayer={true}
                 numTricksTaken={numTricksTaken}
                 tricksTaken={tricksTaken}
-                onCardSelect={this.onPlayCard} />;
+                onCardSelect={this.onPlayCard}
+                // TODO
+                showCards={false} />;
         }
 
         return (<div className="btn-container">

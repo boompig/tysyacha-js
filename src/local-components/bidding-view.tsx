@@ -5,6 +5,10 @@ import { scoreHand } from "../ai";
 import {PlayerView} from "./player-view";
 
 interface IBiddingViewProps {
+    /**
+     * Index into playerNames
+     */
+    localPlayerIndex: number;
     playerNames: string[];
 
     dealerIndex: number;
@@ -69,7 +73,8 @@ export class BiddingView extends React.PureComponent<IBiddingViewProps, IBidding
                     tricksTaken={[]}
                     numTricksTaken={0}
                     isContractPlayer={false}
-                    isActivePlayer={i === this.state.biddingPlayerIndex} />
+                    isActivePlayer={i === this.state.biddingPlayerIndex}
+                    showCards={i === this.props.localPlayerIndex} />
                 <div>{ hand.getPoints() } points in hand</div>
                 <div>Marriages: { hand.marriages.length > 0 ? hand.marriages.join(" ") : "none" }</div>
             </div>);

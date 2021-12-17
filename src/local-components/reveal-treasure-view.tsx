@@ -30,7 +30,9 @@ export class RevealTreasureView extends React.PureComponent<RevealTreasureViewPr
                 isContractPlayer={i === this.props.contractPlayerIndex}
                 isActivePlayer={i === this.props.contractPlayerIndex}
                 tricksTaken={[]}
-                numTricksTaken={0} />
+                numTricksTaken={0}
+                // TODO
+                showCards={false} />
         });
 
         const treasureCards = this.props.treasure.map((card: Card, i: number) => {

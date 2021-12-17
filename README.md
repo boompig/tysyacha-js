@@ -1,5 +1,17 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## About
+
+This is an *incomplete* project written in React to play the Russian card game Tysyacha against both a local (AI) and a remote (human) opponent.
+
+The local AIs are implemented as service workers.
+
+## About Tysyacha
+
+This game uses standard rules but may be different from the game you are used to playing. Your mileage may vary.
+
+- player to the left (next in order) from the dealer is the first to bid
+
 ## Available Scripts
 
 In the project directory, you can run:
@@ -37,8 +49,8 @@ Instead, it will copy all the configuration files and the transitive dependencie
 
 You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
 
-## Learn More
+## Routes
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- `/local-ai-game`
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Play the Tysyacha game against a local AI

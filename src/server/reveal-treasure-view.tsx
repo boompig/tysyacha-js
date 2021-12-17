@@ -31,7 +31,8 @@ export class RevealTreasureView extends React.PureComponent<RevealTreasureViewPr
                     isContractPlayer={true}
                     isActivePlayer={true}
                     tricksTaken={[]}
-                    numTricksTaken={0} />
+                    numTricksTaken={0}
+                    showCards={false} />
         );
 
         return (<div className="table container">

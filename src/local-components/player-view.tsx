@@ -1,4 +1,4 @@
-import React, { PureComponent } from "react";
+import React, { PureComponent, FC } from "react";
 import { Card, getSuits, Hand, Suit } from "../cards";
 import { ITrickCard, GamePhase } from "../game-mechanics";
 import { CardView } from "./card-view";
@@ -35,6 +35,11 @@ interface IPlayerViewProps {
     isActivePlayer: boolean;
 
     /**
+     * True iff we should show this player's cards
+     */
+    showCards: boolean;
+
+    /**
      * What to do if the user clicks a card
      */
     onCardSelect?: (playerIndex: number, cardIndex: number) => void;
@@ -45,48 +50,43 @@ interface IState {}
 /**
  * Display the cards as sorted by suit
  */
-export class PlayerView extends PureComponent<IPlayerViewProps, IState> {
-    constructor(props: IPlayerViewProps) {
-        super(props);
-        this.onSelectCard = this.onSelectCard.bind(this)
-    }
+export const PlayerView : FC<IPlayerViewProps> = (props: IPlayerViewProps) => {
 
-    onSelectCard(cardIndex: number): void {
-        if(this.props.isActivePlayer && this.props.onCardSelect) {
-            this.props.onCardSelect(this.props.playerIndex, cardIndex);
+    function onSelectCard(cardIndex: number): void {
+        if(props.isActivePlayer && props.onCardSelect) {
+            props.onCardSelect(props.playerIndex, cardIndex);
         }
     }
 
-    render(): JSX.Element {
-        const cardViews = [] as JSX.Element[];
-        getSuits().forEach((suit: Suit) => {
-            this.props.hand.cardsBySuit[suit].forEach((card: Card) => {
-                const i = this.props.hand.cards.indexOf(card);
-                let onClick = undefined;
-                if(this.props.isActivePlayer && this.props.onCardSelect) {
-                    onClick = (e: React.SyntheticEvent) => {return this.onSelectCard(i)};
-                }
-                const elem = <CardView suit={card.suit}  key={`player-card-${i}`}
-                    value={card.value}
-                    onClick={onClick} />;
-                cardViews.push(elem);
-            });
+    const cardViews = [] as JSX.Element[];
+    getSuits().forEach((suit: Suit) => {
+        props.hand.cardsBySuit[suit].forEach((card: Card) => {
+            const i = props.hand.cards.indexOf(card);
+            let onClick = undefined;
+            if(props.isActivePlayer && props.onCardSelect) {
+                onClick = (e: React.SyntheticEvent) => {return onSelectCard(i)};
+            }
+            const elem = <CardView suit={card.suit}  key={`player-card-${i}`}
+                value={card.value}
+                showBack={!props.showCards}
+                onClick={onClick} />;
+            cardViews.push(elem);
         });
+    });
 
-        const addClass = this.props.isActivePlayer ? "active-player" : "";
+    const addClass = props.isActivePlayer ? "active-player" : "";
 
-        return (<div className={ "player " + addClass }>
-            <div className="player-name">
-                { this.props.name }
-                { this.props.isDealer ? " (D)" : "" }
-                { this.props.isContractPlayer ? " (C)" : "" }
-                { this.props.phase !== GamePhase.BIDDING && this.props.phase !== GamePhase.REVEAL_TREASURE ?
-                    <span>&nbsp;({ this.props.numTricksTaken } tricks taken)</span> :
-                    null }
-            </div>
-            <div className="player-hand">
-                { cardViews }
-            </div>
-        </div>);
-    }
+    return (<div className={ "player " + addClass }>
+        <div className="player-name">
+            { props.name }
+            { props.isDealer ? " (D)" : "" }
+            { props.isContractPlayer ? " (C)" : "" }
+            { props.phase !== GamePhase.BIDDING && props.phase !== GamePhase.REVEAL_TREASURE ?
+                <span>&nbsp;({ props.numTricksTaken } tricks taken)</span> :
+                null }
+        </div>
+        <div className="player-hand">
+            { cardViews }
+        </div>
+    </div>);
 }

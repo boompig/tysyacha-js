@@ -2,7 +2,10 @@
     padding-top: 1rem;
 }
 
-.player-hand, .trick-card-container, .treasure-container, .player-tricks-taken {
+.player-hand,
+.trick-card-container,
+.treasure-container,
+.player-tricks-taken {
     display: flex;
     flex-direction: row;
     width: 99%;
@@ -33,13 +36,11 @@
     border: 1px solid #111;
     border-radius: 3px;
     background-color: white;
-
     font-size: 1.2rem;
     min-height: 124px;
     min-width: 85px;
     width: 85px;
     min-width: 85px;
-
     display: flex;
     justify-content: space-between;
     flex-direction: column;
@@ -50,11 +51,21 @@
     text-align: right;
 }
 
-.playing-card.card-black {
+
+/**
+ * Show only the back of the card
+ */
+
+.playing-card.card-back {
+    color: green;
+    background-color: green;
+}
+
+.playing-card.card-black:not(.card-back) {
     color: black;
 }
 
-.playing-card.card-red {
+.playing-card.card-red:not(.card-back) {
     color: red;
 }
 
