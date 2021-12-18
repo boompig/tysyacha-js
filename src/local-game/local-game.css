@@ -1,0 +1,14 @@
+/**
+ * Styling for the local game only
+ */
+
+.bidding-view .player-order {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    margin: 0 auto;
+    max-width: 600px;
+    padding: 1rem 0;
+    font-size: 1.2rem;
+}

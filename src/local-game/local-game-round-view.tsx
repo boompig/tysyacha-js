@@ -1,12 +1,12 @@
 import React, { PureComponent } from "react";
-import "./card.css";
-import { Card, CardValue, Deck, Hand, Suit } from "./cards";
-import { Bid, canPlayCard, GamePhase, getWinningCard, ITrickCard } from "./game-mechanics";
-import { CardView } from "./local-components/card-view";
-import {PlayerView} from "./local-components/player-view";
-import { RoundScoringView } from "./local-components/round-scoring-view";
-import { BiddingView } from "./local-components/bidding-view";
-import { RevealTreasureView } from "./local-components/reveal-treasure-view";
+import "../card.css";
+import { Card, CardValue, Deck, Hand, Suit } from "../cards";
+import { Bid, canPlayCard, GamePhase, getWinningCard, ITrickCard } from "../game-mechanics";
+import { CardView } from "../local-components/card-view";
+import {PlayerView} from "../local-components/player-view";
+import { RoundScoringView } from "../local-components/round-scoring-view";
+import { BiddingView } from "./bidding-view";
+import { RevealTreasureView } from "../local-components/reveal-treasure-view";
 
 interface ITestRoundProps {
     /**

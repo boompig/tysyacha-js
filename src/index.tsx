@@ -4,7 +4,7 @@ import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 import Lounge from "./lounge/lounge";
-import {LocalGameView} from "./local-game-view";
+import { LocalGameView } from "./local-game/local-game-view";
 import {ServerView} from "./server/server-view";
 
 console.debug(`path: ${window.location.pathname}`);

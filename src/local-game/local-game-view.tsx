@@ -1,7 +1,9 @@
 import React, { PureComponent } from "react";
 import { LocalGameRoundView } from "./local-game-round-view";
-import ScoreView from "./score-view";
-import SelectPlayerNameView from "./select-player-name-view";
+import ScoreView from "../score-view";
+import SelectPlayerNameView from "../select-player-name-view";
+import "./local-game.css";
+import { register } from "./serviceWorker";
 
 /**
  * Generate a random number in the half-open interval [a, b)
@@ -101,6 +103,9 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
         if (name) {
             this.onPlayerName(name);
         }
+
+        // register the service worker as well
+        register();
     }
 
     onRoundOver(scores: {[key: string]: number}, isEarlyExit: boolean): void {
