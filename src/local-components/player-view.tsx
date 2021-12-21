@@ -79,7 +79,7 @@ export const PlayerView : FC<IPlayerViewProps> = (props: IPlayerViewProps) => {
     return (<div className={ "player " + addClass }>
         <div className="player-name">
             { props.name }
-            { props.isDealer ? " (D)" : "" }
+            { props.isDealer ? " (Dealer)" : "" }
             { props.isContractPlayer ? " (C)" : "" }
             { props.phase !== GamePhase.BIDDING && props.phase !== GamePhase.REVEAL_TREASURE ?
                 <span>&nbsp;({ props.numTricksTaken } tricks taken)</span> :

@@ -1,0 +1,41 @@
+body {
+    height: 100%;
+    width: 100%;
+}
+
+.wrapper {
+    padding: 0;
+    margin: 0;
+}
+
+.hero {
+    height: 50vh;
+    background: linear-gradient(45deg, #1f57a6, #0c2c59);
+}
+
+.hero .title-text {
+    position: relative;
+    top: 45%;
+    left: 45%;
+    font-size: 5rem;
+    font-weight: lighter;
+    color: white;
+}
+
+main {
+    max-width: 700px;
+    padding-top: 1rem;
+    margin: 0 auto;
+}
+
+.instructions {
+    font-size: 1.1rem;
+}
+
+form input {
+    font-size: 1.1rem;
+}
+
+form button {
+    margin-top: .5rem;
+}

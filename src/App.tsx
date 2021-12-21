@@ -7,7 +7,6 @@ import {readNameCookie} from './name-cookie';
 import {API, MessageType, IGameInfo} from './api';
 
 
-const api = new API();
 
 function readGameId(): string | null {
     const u = new URL(window.location.href);
@@ -15,7 +14,7 @@ function readGameId(): string | null {
 }
 
 /**
- * This component is the parent component of the game view
+ * This component is the parent component of the game view (server only)
  * Shows all things related to the game
  */
 function App(): JSX.Element {
@@ -25,6 +24,8 @@ function App(): JSX.Element {
 	 */
     const [hasStarted, setHasStarted] = useState(false);
     const [gameId, setGameId] = useState(null as string | null);
+
+    const api = new API();
 
     /**
 	 * Lounge variables

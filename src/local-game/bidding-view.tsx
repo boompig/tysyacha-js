@@ -93,26 +93,42 @@ export const BiddingView : FC<IBiddingViewProps> = (props: IBiddingViewProps) =>
         }
         return <div className={ classes.join(' ')} key={ `player-${i}` }>
             <span>{name}</span>
+            {props.localPlayerIndex !== i ?
+                <span>&nbsp;(AI)</span> :
+                null
+            }
             {props.localPlayerIndex === i ?
-            <span>*</span> :
-            null }
+                <span>*</span> :
+                null}
         </div>
     });
 
-    return <div className='bidding-view'>
+    return <div className="bidding-view">
         <div className="player-order">
             {playerOrder}
         </div>
-        <h2>Your Hand</h2>
-        {playerView}
 
-        { biddingPlayerIndex === props.localPlayerIndex ? 
-            <div className='bidding-choices'>
-                <select></select>
-            </div>:
+        <div className="round-info">
+            <p>
+                It is { props.playerNames[biddingPlayerIndex]}'s turn to bid.
+            </p>
+        </div>
 
-            <button type="button" className="btn btn-primary btn-lg"
-                onClick={(e) => {return onClick()}}>AI Bid</button>
-        }
+        <div className="player-action-container">
+            { biddingPlayerIndex === props.localPlayerIndex ?
+                <div className="bidding-choices">
+                    <select></select>
+                </div>:
+
+                <button type="button" className="btn btn-primary btn-lg"
+                    onClick={(e) => {return onClick()}}>AI Bid</button>
+            }
+        </div>
+
+        <div className="player-hand-container">
+            <h2>Your Hand</h2>
+            {playerView}
+
+        </div>
     </div>;
 }

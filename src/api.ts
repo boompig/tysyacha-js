@@ -395,6 +395,13 @@ export class API {
         return r;
     }
 
+    leaveLounge(username: string) {
+        this.socket.send(JSON.stringify({
+            msgType: MessageType.LEAVE_LOUNGE,
+            username: username,
+        }));
+    }
+
     async createGame(username: string, options?: any): Promise<ICreateGameResponse> {
         const data : any = {
             username,

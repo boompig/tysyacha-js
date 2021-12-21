@@ -1,10 +1,8 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, FC} from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './lounge.css'
 import {readNameCookie, setNameCookie} from '../name-cookie';
 import { MessageType, API, ICreateGameResponse } from '../api';
-
-const api = new API();
 
 interface INameProps {
     onNameSet(name: string): void;
@@ -60,13 +58,14 @@ function LoungeNameForm(props: INameProps) {
 interface ICreateGameProps {
     username: string;
     gameId: string | null;
+    api: API;
     onGameCreated: (gameId: string) => any;
 }
 
-function CreateGameView(props: ICreateGameProps) {
+const CreateGameView : FC<ICreateGameProps> = (props: ICreateGameProps) => {
     useEffect(() => {
         if(!props.gameId) {
-            api.createGame(props.username).then((createGameData: ICreateGameResponse) => {
+            props.api.createGame(props.username).then((createGameData: ICreateGameResponse) => {
                 props.onGameCreated(createGameData.gameId);
             });
         }
@@ -87,20 +86,21 @@ function CreateGameView(props: ICreateGameProps) {
             creating new game...
         </div>;
     }
-}
+};
 
 interface IJoinGameViewProps {
     name: string;
+    api: API;
 }
 
-function JoinGameView(props: IJoinGameViewProps) {
+const JoinGameView : FC<IJoinGameViewProps> = (props: IJoinGameViewProps) => {
     const [gameId, setGameId] = useState('' as string);
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
 
         // leave the lounge
-        leaveLounge(props.name);
+        props.api.leaveLounge(props.name);
 
         window.location.href = `/game?gameid=${gameId}`;
     }
@@ -120,18 +120,7 @@ function JoinGameView(props: IJoinGameViewProps) {
             <button type='submit' className='btn btn-lg btn-primary form-control'>Join Game</button>
         </form>
     </div>
-}
-
-async function joinLounge(username: string, isHeartbeat: boolean) {
-    await api.joinLounge(username, isHeartbeat);
-}
-
-function leaveLounge(name: string) {
-    api.socket.send(JSON.stringify({
-        msgType: MessageType.LEAVE_LOUNGE,
-        username: name
-    }));
-}
+};
 
 interface ILoungeState {
     name: string | null;
@@ -149,6 +138,8 @@ interface ILoungeProps {}
  * Handles username registration and game creation
  */
 class Lounge extends React.Component<ILoungeProps, ILoungeState> {
+    private api: API;
+
     constructor(props: ILoungeProps) {
         super(props);
 
@@ -161,6 +152,8 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
             isSocketError: false,
         };
 
+        this.api = new API();
+
         this.handleNameSet = this.handleNameSet.bind(this);
         this.onWebSocketMessage = this.onWebSocketMessage.bind(this);
         this.showCreateGame = this.showCreateGame.bind(this);
@@ -170,25 +163,27 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
 
     componentDidMount() {
         document.title = 'Tysyacha Lounge';
-        api.socket.onmessage = this.onWebSocketMessage;
-        api.socket.onerror = (event: Event) => {
+        this.api.socket.onmessage = this.onWebSocketMessage;
+        this.api.socket.onerror = (event: Event) => {
             console.error('Observed error in API websocket:');
             console.error(event);
             this.setState({
                 isSocketError: true,
             });
         };
-        api.socket.onopen = (event: Event) => {
+        this.api.socket.onopen = (event: Event) => {
             console.log('API websocket opened successfully');
             // once connected, request users
             if(this.state.name) {
-                joinLounge(this.state.name, false);
+                // this is async
+                this.api.joinLounge(this.state.name, false);
             }
 
             // send a heartbeat message every minute
             window.setTimeout(() => {
                 if(this.state.name) {
-                    joinLounge(this.state.name, true);
+                    // this is async
+                    this.api.joinLounge(this.state.name, true);
                 }
             }, 60 * 1000);
         };
@@ -230,7 +225,7 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
     showCreateGame(show: boolean) {
         // leave the lounge
         if(this.state.name) {
-            leaveLounge(this.state.name);
+            this.api.leaveLounge(this.state.name);
         }
 
         this.setState({
@@ -254,13 +249,13 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
         if(!this.state.name) {
             throw new Error('must have name to use this method');
         }
-        api.createGame(this.state.name, {
+        this.api.createGame(this.state.name, {
             isComputerOnly: true,
         }).then((createGameData: ICreateGameResponse) => {
             if(!this.state.name) {
                 throw new Error('must have name to use this method');
             }
-            leaveLounge(this.state.name);
+            this.api.leaveLounge(this.state.name);
             window.location.href = `/game?gameid=${createGameData.gameId}`;
         });
     }
@@ -269,13 +264,14 @@ class Lounge extends React.Component<ILoungeProps, ILoungeState> {
         if(this.state.showGameCreation && this.state.name) {
             return (<main className='container'>
                 <CreateGameView
+                    api={this.api}
                     gameId={this.state.newGameId}
                     username={this.state.name}
                     onGameCreated={this.handleGameCreated} />
             </main>);
         } else if(this.state.showGameJoin && this.state.name) {
             return (<main className='container'>
-                <JoinGameView name={this.state.name} />
+                <JoinGameView name={this.state.name} api={this.api} />
             </main>);
         } else if(this.state.name) {
             const peopleInLounge = this.state.loungeUsers.filter((user: string) => {

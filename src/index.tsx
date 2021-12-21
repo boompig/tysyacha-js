@@ -2,16 +2,22 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
-import * as serviceWorker from './serviceWorker';
 import Lounge from "./lounge/lounge";
 import { LocalGameView } from "./local-game/local-game-view";
-import {ServerView} from "./server/server-view";
+import { ServerView } from "./server/server-view";
+import { LandingView } from "./landing/landing-view";
+// import { register } from "./serviceWorkerRegister";
 
 console.debug(`path: ${window.location.pathname}`);
 
 switch (window.location.pathname) {
     case '/':
-        window.location.href = '/local-ai-game';
+        ReactDOM.render(
+            <React.StrictMode>
+                <LandingView />
+            </React.StrictMode>,
+            document.getElementById('root')
+        );
         break;
     case '/lounge':
         ReactDOM.render(
@@ -22,9 +28,21 @@ switch (window.location.pathname) {
         );
         break;
     case '/local-ai-game':
+        // player name and game ID should be set in the GET string
+        const url = new URL(window.location.href);
+        const gameId = url.searchParams.get('gameId');
+        const playerName = url.searchParams.get('playerName');
+
+        if (!gameId || !playerName) {
+            window.location.href = '/';
+            break;
+        }
+
         ReactDOM.render(
             <React.StrictMode>
-                <LocalGameView />
+                <LocalGameView
+                    gameId={gameId}
+                    playerName={playerName}/>
             </React.StrictMode>,
             document.getElementById('root')
         );
@@ -57,4 +75,4 @@ switch (window.location.pathname) {
 // unregister() to register() below. Note this comes with some pitfalls.
 // Learn more about service workers: https://bit.ly/CRA-PWA
 // serviceWorker.unregister();
-serviceWorker.register();
+// register();

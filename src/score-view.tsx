@@ -2,7 +2,7 @@
  * This view shows the *overall* scores of the players
  */
 
-import React, {useState} from 'react';
+import React, { useState, FC } from 'react';
 
 interface IScoreViewProps {
     // map from user to score
@@ -28,7 +28,7 @@ interface IScoreViewProps {
 /**
  * Shows the scores for all players across all rounds of the game
  */
-export function ScoreView(props: IScoreViewProps): JSX.Element {
+const ScoreView : FC<IScoreViewProps> = (props: IScoreViewProps) => {
     const [isCollapsed, setCollapsed] = useState(props.isCollapsed ? true : false);
 
     function toggleCollapsed(e: React.SyntheticEvent) {
@@ -79,6 +79,9 @@ export function ScoreView(props: IScoreViewProps): JSX.Element {
                 </tbody>
             </table> }
     </div>)
-}
+};
 
+export {
+    ScoreView,
+};
 export default ScoreView;

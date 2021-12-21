@@ -12,3 +12,42 @@
     padding: 1rem 0;
     font-size: 1.2rem;
 }
+
+@media screen and (min-width: 900px) {
+    .bidding-view .player-order {
+        min-height: 8rem;
+        max-width: 650px;
+    }
+    .bidding-view .player-order .player-name {
+        font-size: 1.1rem;
+        padding-bottom: 0;
+    }
+    .bidding-view .player-order .player-name:first-of-type {
+        position: relative;
+        top: 5rem;
+        left: 0rem;
+    }
+    .bidding-view .player-order .player-name:last-of-type {
+        position: relative;
+        top: 5rem;
+        right: 4rem;
+    }
+    .bidding-view .player-hand-container {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        padding-bottom: 1rem;
+    }
+}
+
+.bidding-view .round-info {
+    margin: 0 auto;
+    max-width: 600px;
+    padding-top: 2rem;
+}
+
+.bidding-view .player-action-container {
+    margin: 0 auto;
+    max-width: 600px;
+    padding-top: 1rem;
+}
