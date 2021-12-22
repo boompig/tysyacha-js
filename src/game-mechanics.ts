@@ -37,6 +37,8 @@ export function getGamePhases(): GamePhase[] {
     ];
 }
 
+export const MIN_BID_POINTS = 60;
+
 /**
  * A bid of 0 -> pass
  */
@@ -167,6 +169,26 @@ export function _countTrickPoints(trick: ITrickCard[]): number {
     }).reduce((total: number, cardValue: CardValue) => {
         return total + cardValue;
     }, 0);
+}
+
+/**
+ * Return true iff the bidding is now concluded
+ * This occurs when all players have passed
+ */
+export function isBiddingComplete(bidHistory: Bid[]): boolean {
+    const passedPlayers: string[] = [];
+    let hasNonPassBid = false;
+    for(let i = 0; i < bidHistory.length; i++) {
+        let bid = bidHistory[i];
+        if (passedPlayers.includes(bid.player)) {
+            continue;
+        } else if (bid.points === 0) {
+            passedPlayers.push(bid.player);
+        } else {
+            hasNonPassBid = true;
+        }
+    }
+    return (passedPlayers.length === 3) || (hasNonPassBid && passedPlayers.length === 2);
 }
 
 /**

@@ -1,4 +1,4 @@
-import React, { PureComponent, FC } from "react";
+import React, { FC } from "react";
 import { Card, getSuits, Hand, Suit } from "../cards";
 import { ITrickCard, GamePhase } from "../game-mechanics";
 import { CardView } from "./card-view";
@@ -40,12 +40,15 @@ interface IPlayerViewProps {
     showCards: boolean;
 
     /**
+     * Indexes of the selected cards relative to `hand.cards`
+     */
+    selectedCards?: number[];
+
+    /**
      * What to do if the user clicks a card
      */
     onCardSelect?: (playerIndex: number, cardIndex: number) => void;
 }
-
-interface IState {}
 
 /**
  * Display the cards as sorted by suit
@@ -69,7 +72,8 @@ export const PlayerView : FC<IPlayerViewProps> = (props: IPlayerViewProps) => {
             const elem = <CardView suit={card.suit}  key={`player-card-${i}`}
                 value={card.value}
                 showBack={!props.showCards}
-                onClick={onClick} />;
+                onClick={onClick}
+                isSelected={props.selectedCards && props.selectedCards.includes(i)} />;
             cardViews.push(elem);
         });
     });
@@ -80,7 +84,7 @@ export const PlayerView : FC<IPlayerViewProps> = (props: IPlayerViewProps) => {
         <div className="player-name">
             { props.name }
             { props.isDealer ? " (Dealer)" : "" }
-            { props.isContractPlayer ? " (C)" : "" }
+            { props.isContractPlayer ? " (Contract)" : "" }
             { props.phase !== GamePhase.BIDDING && props.phase !== GamePhase.REVEAL_TREASURE ?
                 <span>&nbsp;({ props.numTricksTaken } tricks taken)</span> :
                 null }

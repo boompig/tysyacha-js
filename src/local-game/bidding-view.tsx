@@ -1,8 +1,9 @@
-import React, { FC, useState } from "react";
+import React, { FC, useState, useEffect } from "react";
 import { Hand } from "../cards";
-import { Bid, GamePhase } from "../game-mechanics";
-import { scoreHand } from "../ai";
+import { Bid, GamePhase, getWinningBid, isBiddingComplete, MIN_BID_POINTS } from "../game-mechanics";
+import AI from "./ai";
 import {PlayerView} from "../local-components/player-view";
+import { BidHistoryView } from "./bid-history-view";
 
 interface IBiddingViewProps {
     /**
@@ -23,45 +24,135 @@ interface IBiddingViewProps {
     onNextPhase(winningBid: Bid | null): any;
 }
 
-interface IBiddingViewState {
-    /**
-     * Index into playerNames
-     * This is the player whose turn it is to bid
-     */
-    biddingPlayerIndex: number
-}
-
 /**
  * Local representation of bidding view
  * For now, this assigns a *fake* bid to the pla
  */
 export const BiddingView : FC<IBiddingViewProps> = (props: IBiddingViewProps) => {
-    let [biddingPlayerIndex, setBiddingPlayerIndex] = useState((props.dealerIndex + 1) % 3);
+    /**
+     * Index into playerNames
+     */
+    const startingBidPlayer = (props.dealerIndex + 1) % 3;
+    /**
+     * Index into playerNames
+     */
+    let [biddingPlayerIndex, setBiddingPlayerIndex] = useState(startingBidPlayer);
+    /**
+     * List of bids by all players starting with the startingBidPlayer
+     */
+    let [bidHistory, setBidHistory] = useState([] as Bid[]);
+    /**
+     * Points entered into the points form
+     */
+    let [points, setPoints] = useState(0);
+    /**
+     * Error message to display in the points form
+     */
+    let [pointsErrorMsg, setPointsErrorMsg] = useState("");
+    /**
+     * This is a derived state (from bidHistory) that is helpful in tracking whether bidding is over
+     * It is also helpful in determining who can submit a bid
+     * The numbers are indexes into playerNames
+     */
+    let [passedPlayers, setPassedPlayers] = useState([] as number[]);
 
     /**
-     * TODO this is a temporary measure to assign a bid to the strongest hand
+     * When a new bid is added to the bid history, we need to compute whether the bidding is over
      */
-    function onClick(): Promise<void> {
-        let bestScore = 0;
-        let contractPlayer = null as string | null;
-        for(const [name, hand] of Object.entries(props.playerHands)) {
-            const score = scoreHand(hand);
-            const numMarriages = hand.marriages.length;
-            console.log(`Player ${name} has hand score of ${score} (${numMarriages} marriages)`);
-            if(score > bestScore) {
-                contractPlayer = name;
-                bestScore = score;
-            }
+    useEffect(() => {
+        const isBiddingOver = isBiddingComplete(bidHistory);
+        if (isBiddingOver) {
+            let winningBid = getWinningBid(bidHistory);
+            props.onNextPhase(winningBid);
+            // reset everything
+            setPassedPlayers([]);
+            setPointsErrorMsg("");
+            setPoints(0);
+            setBidHistory([]);
         }
+    });
 
-        if(!contractPlayer) {
-            throw new Error("unable to find a contract player");
+    /**
+     * This is an internal helper function
+     */
+    function addBid(newBid: Bid, playerIndex: number) {
+        setBidHistory([...bidHistory, newBid]);
+        setBiddingPlayerIndex((biddingPlayerIndex + 1) % 3);
+        if (newBid.points === 0 && !passedPlayers.includes(playerIndex)) {
+            setPassedPlayers([...passedPlayers, playerIndex]);
         }
+    }
 
-        return props.onNextPhase(({
-            player: contractPlayer,
-            points: 100
-        }));
+    function handleGetAIBid() {
+        if (biddingPlayerIndex === props.localPlayerIndex) {
+            throw new Error('method can only be called for AI players');
+        }
+        const playerName = props.playerNames[biddingPlayerIndex];
+        let newBid : Bid | null = null;
+        if (passedPlayers.includes(biddingPlayerIndex)) {
+            // this AI has already passed
+            newBid = {
+                points: 0,
+                player: playerName,
+            };
+        } else {
+            newBid = AI.getBid(bidHistory, playerName);
+        }
+        addBid(newBid, biddingPlayerIndex);
+    }
+
+    /**
+     * Human player submits a passing bid
+     */
+    function handlePass() {
+        const playerName = props.playerNames[biddingPlayerIndex];
+        addBid({
+            points: 0,
+            player: playerName,
+        }, props.localPlayerIndex);
+    }
+
+    /**
+     * Human player changes the points in the input element
+     */
+    function handleChangePoints(e: React.SyntheticEvent<HTMLInputElement>) {
+        const points = Number.parseInt((e.target as any).value);
+
+        if (points < 0) {
+            setPointsErrorMsg("points cannot be negative");
+            return;
+        } else if (points === 0) {
+            setPointsErrorMsg("cannot bid 0");
+        } else if (points % 5 != 0) {
+            setPointsErrorMsg("points can only be moved in increments of 5");
+            return;
+        } else if (points < MIN_BID_POINTS) {
+            setPointsErrorMsg("this bid is beneath the points minimum");
+            return;
+        } else {
+            setPointsErrorMsg("");
+            setPoints(points);
+        }
+    }
+
+    /**
+     * Human player submits a non-pass bid
+     */
+    function handleSubmitBid() {
+        if (passedPlayers.includes(props.localPlayerIndex)) {
+            setPointsErrorMsg("you cannot submit a bid - you have already passed");
+        }
+        const winningBid = getWinningBid(bidHistory);
+        if (winningBid && winningBid.points >= points) {
+            setPointsErrorMsg("your bid is lower than the current highest bid");
+            return;
+        } else {
+            const playerName = props.playerNames[biddingPlayerIndex];
+            addBid({
+                points: points,
+                player: playerName,
+            }, props.localPlayerIndex);
+        }
     }
 
     const name = props.playerNames[props.localPlayerIndex];
@@ -116,19 +207,34 @@ export const BiddingView : FC<IBiddingViewProps> = (props: IBiddingViewProps) =>
 
         <div className="player-action-container">
             { biddingPlayerIndex === props.localPlayerIndex ?
-                <div className="bidding-choices">
-                    <select></select>
-                </div>:
+                <form className="bidding-form">
+                    <label>Points</label>
+                    <input type="number" name="points" min={0} max={400} step={5}
+                        className="form-control"
+                        onChange={handleChangePoints} />
+                    { pointsErrorMsg ? <p className="error-msg">{ pointsErrorMsg }</p> : null }
+                    <div className="btn-group">
+                        <button type="button" className="btn btn-lg btn-success"
+                            onClick={handleSubmitBid}
+                            disabled={points === 0 || pointsErrorMsg !== "" || passedPlayers.includes(props.localPlayerIndex) }>Submit Bid</button>
+                        <button type="button" className="btn btn-lg btn-danger"
+                            onClick={handlePass}>Pass</button>
+                    </div>
+                </form>:
 
                 <button type="button" className="btn btn-primary btn-lg"
-                    onClick={(e) => {return onClick()}}>AI Bid</button>
+                    onClick={handleGetAIBid}>AI Bid</button>
             }
         </div>
+
+        <BidHistoryView
+            playerNames={props.playerNames}
+            startingBidPlayer={startingBidPlayer}
+            bidHistory={bidHistory} />
 
         <div className="player-hand-container">
             <h2>Your Hand</h2>
             {playerView}
-
         </div>
     </div>;
 }

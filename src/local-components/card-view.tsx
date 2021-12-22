@@ -1,5 +1,5 @@
 import React, { FC } from "react";
-import { CardValue, ICard, Suit, valueToString } from "../cards";
+import { CardValue, Suit, valueToString } from "../cards";
 
 interface ICardViewProps {
     suit: Suit;
@@ -20,9 +20,12 @@ interface ICardViewProps {
      * False by default
      */
     showBack?: boolean;
-}
 
-interface IState {}
+    /**
+     * If true, this card has been selected
+     */
+    isSelected?: boolean;
+}
 
 export const CardView : FC<ICardViewProps> = (props: ICardViewProps) => {
 
@@ -44,6 +47,9 @@ export const CardView : FC<ICardViewProps> = (props: ICardViewProps) => {
     }
     if(props.classNames) {
         classes.push(...props.classNames);
+    }
+    if (props.isSelected) {
+        classes.push("card-selected");
     }
     if(props.showBack) {
         classes.push("card-back");

@@ -3,12 +3,21 @@ import "../card.css";
 import { Card, CardValue, Deck, Hand, Suit } from "../cards";
 import { Bid, canPlayCard, GamePhase, getWinningCard, ITrickCard } from "../game-mechanics";
 import { CardView } from "../local-components/card-view";
-import {PlayerView} from "../local-components/player-view";
+import { PlayerView } from "../local-components/player-view";
 import { RoundScoringView } from "../local-components/round-scoring-view";
 import { BiddingView } from "./bidding-view";
 import { RevealTreasureView } from "../local-components/reveal-treasure-view";
 
 interface ITestRoundProps {
+    gameId: string;
+    roundNum: number;
+
+    /**
+     * Can optionally set a random seed to control the results (repro)
+     * Do not change this halfway through the round, that will result in undefined behaviour
+     */
+    randomSeed: number;
+
     /**
      * True iff we want to show all players' cards, not just the human player's
      */
@@ -19,23 +28,27 @@ interface ITestRoundProps {
     localPlayerIndex: number;
     playerNames: string[];
     dealerIndex: number;
+    /**
+     * The number of consecutive failed deals
+     */
+    numFailedDeals: number;
     onRoundOver: (scores: {[key: string]: number}, isEarlyExit: boolean) => any;
+    onChangePhase(phase: GamePhase): void;
 }
 
-interface ITestRoundState {
-    playerHands: {[key: string]: Hand};
-    treasure: Card[];
-    isBigHand: boolean;
-
+interface ILocalRoundState {
     phase: GamePhase;
 
+    // set after deal phase
+    playerHands: {[key: string]: Hand};
+    treasure: Card[];
+
+    // set after bidding phase
     /**
      * This is the player who owns the contract
      */
     contractPlayerIndex: number;
     currentContract: Bid | null;
-
-    selectedTreasureCards: {[key: string]: Card};
 
     // playing phase
     activePlayerIndex: number;
@@ -49,10 +62,25 @@ interface ITestRoundState {
     declaredMarriages: {[key: string]: Suit[]};
 }
 
+interface ISavedRoundState {
+    phase: GamePhase;
+
+    // after deal phase (and card distribution)
+    playerHands: {[key: string]: Hand};
+    treasure: Card[];
+
+    // after bid phase
+    currentContract: Bid | null;
+    contractPlayerIndex: number;
+
+    // after card distribution
+    activePlayerIndex: number;
+}
+
 /**
  * This is the game.
  */
-export class LocalGameRoundView extends PureComponent<ITestRoundProps, ITestRoundState> {
+export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRoundState> {
     constructor(props: ITestRoundProps) {
         super(props);
 
@@ -62,20 +90,25 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ITestRoun
         }));
 
         this.state = {
+            // general info
+            phase: GamePhase.NOT_DEALT,
+
+            // dealing
             playerHands: {},
             treasure: [],
-            isBigHand: false,
 
+            // bidding
             currentContract: null,
             contractPlayerIndex: 0,
 
-            phase: GamePhase.NOT_DEALT,
+            // treasure distribution
+            // nothing here
 
-            selectedTreasureCards: {},
-
-            // the current bidder, since we start in the bidding phase
-            activePlayerIndex: 0,
-
+            // playing / trick-taking
+            /**
+             * Whose turn it is to play
+             */
+            activePlayerIndex: (this.props.dealerIndex + 1) % 3,
             currentTrick: [],
             trumpSuit: null,
             tricksTaken: tricksTaken,
@@ -87,12 +120,84 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ITestRoun
 
         this.dealCards = this.dealCards.bind(this);
         this.onPlayCard = this.onPlayCard.bind(this);
-        this.onSelectTreasureCard = this.onSelectTreasureCard.bind(this);
-        this.autoDistributeTreasure = this.autoDistributeTreasure.bind(this);
         this.handleCompleteBidding = this.handleCompleteBidding.bind(this);
         this.handleDistributeTreasure = this.handleDistributeTreasure.bind(this);
         this.handleNextRound = this.handleNextRound.bind(this);
         this.resetRound = this.resetRound.bind(this);
+        this.readSavedState = this.readSavedState.bind(this);
+        this.persistState = this.persistState.bind(this);
+    }
+
+    componentDidMount() {
+        this.readSavedState().then((state: ISavedRoundState | null) => {
+            if (!state) {
+                this.persistState();
+            } else {
+                this.setState({
+                    phase: state.phase,
+
+                    playerHands: state.playerHands,
+                    treasure: state.treasure,
+
+                    currentContract: state.currentContract,
+                    contractPlayerIndex: state.contractPlayerIndex,
+
+                    activePlayerIndex: state.activePlayerIndex,
+                });
+            }
+        });
+    }
+
+    /**
+     * Persist the current state
+     */
+    persistState() {
+        console.debug(`Persisting state for game ${this.props.gameId} and round ${this.props.roundNum}...`)
+        let sState = JSON.stringify({
+            phase: this.state.phase,
+            // after dealing (and card distribution)
+            playerHands: this.state.playerHands,
+            treasure: this.state.treasure,
+            // after bidding
+            currentContract: this.state.currentContract,
+            contractPlayerIndex: this.state.contractPlayerIndex,
+            // after card distribution
+            activePlayerIndex: this.state.activePlayerIndex,
+        } as ISavedRoundState);
+        window.localStorage.setItem(`game:${this.props.gameId}:round:${this.props.roundNum}`, sState);
+        console.debug('state has been persisted');
+    }
+
+    /**
+     * Read prior saved state for this round and return it
+     * Return null if we fail to find it
+     */
+    async readSavedState(): Promise<ISavedRoundState | null> {
+        console.debug(`Trying to load saved state from local storage for game ${this.props.gameId} and round ${this.props.roundNum}...`);
+        let sState = window.localStorage.getItem(`game:${this.props.gameId}:round:${this.props.roundNum}`);
+        if (sState) {
+            let state = JSON.parse(sState) as ISavedRoundState;
+            // parse the cards into card objects
+            const newHands = {} as {[key: string]: Hand};
+            Object.entries(state.playerHands).forEach(([player, hand]) => {
+                const cards = hand.cards.map((card: Card) => {
+                    return new Card(card.value, card.suit);
+                });
+                newHands[player] = new Hand(cards);
+            });
+            state.playerHands = newHands;
+
+            const newTreasure = state.treasure.map((card) => {
+                return new Card(card.value, card.suit);
+            });
+            state.treasure = newTreasure;
+
+            console.debug(state);
+            return state;
+        } else {
+            console.debug('not found');
+            return null;
+        }
     }
 
     /**
@@ -147,26 +252,6 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ITestRoun
             await this.onPlayCard(this.state.activePlayerIndex, cardIndex);
         }
         console.log("Autoplay has finished.");
-    }
-
-    /**
-     * Basically randomly distribute the treasure cards
-     */
-    async autoDistributeTreasure(): Promise<void> {
-        // find the last card that has not been taken and assign it to this player
-        const contractPlayer = this.props.playerNames[this.state.contractPlayerIndex];
-        let i = 0;
-        const selectedTreasureCards = {} as { [key: string]: Card };
-        for (const name of this.props.playerNames) {
-            if (name !== contractPlayer) {
-                selectedTreasureCards[name] = this.state.treasure[i];
-                i++;
-            }
-        }
-        await this.setState({
-            selectedTreasureCards: selectedTreasureCards,
-        });
-        await this.handleDistributeTreasure();
     }
 
     /**
@@ -250,9 +335,28 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ITestRoun
         }
     }
 
-    async dealCards(): Promise<void> {
+    /**
+     * Handle the case where a player has dealt unsuccessfully 3 times in a row
+     */
+    handleBolt() {
+        // fill out the scores for each player
+        // dealer gets -120
+        let scores: { [key: string]: number } = {};
+        for (let i = 0; i < this.props.playerNames.length; i++) {
+            let playerName = this.props.playerNames[i];
+            if (i === this.props.dealerIndex) {
+                scores[playerName] = -120;
+            } else {
+                scores[playerName] = 0;
+            }
+        }
+        this.resetRound();
+        this.props.onRoundOver(scores, true);
+    }
+
+    dealCards() {
         console.log("Dealing cards...");
-        const deck = new Deck(1);
+        const deck = new Deck(this.props.randomSeed);
 
         // deal out 3 cards for treasure
         const treasure = [];
@@ -272,86 +376,69 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ITestRoun
             playerHands[name] = hand;
         }
 
-        await this.setState({
+        this.setState({
             treasure: treasure,
             phase: GamePhase.BIDDING,
             playerHands: playerHands,
+        }, () => {
+            this.props.onChangePhase(GamePhase.BIDDING);
+            console.log("cards have been dealt");
+            this.persistState();
         });
-        console.log("cards have been dealt");
     }
 
-    onSelectTreasureCard(cardIndex: number): void {
-        const d = Object.assign({},
-            this.state.selectedTreasureCards
-        );
-        const card = this.state.treasure[cardIndex];
-        if(Object.values(d).includes(card)) {
-            // find the key corresponding to the card
-            let name = null;
-            for(const [playerName, otherCard] of Object.entries(d)) {
-                if (otherCard === card) {
-                    name = playerName;
-                    break;
-                }
+    /**
+     * Remove the selected cards from the contract player
+     * Move them (according to the assignments) to the target players
+     * This will advance the phase to PLAYING
+     * @param cardDistribution Map from player names to card objects
+     */
+    handleDistributeTreasure(cardDistribution: {[key: string]: Card}) {
+        console.assert(Object.keys(cardDistribution).length === 2);
+        console.assert(this.state.treasure.length === 3);
+
+        const contractPlayerName = this.props.playerNames[this.state.contractPlayerIndex];
+        // the "big hand" is composed out of the cards in that player's hand and the treasure cards
+        const playerBigHand = this.state.playerHands[contractPlayerName].cards;
+        playerBigHand.push(...this.state.treasure);
+
+        const newPlayerHands = Object.assign({}, this.state.playerHands);
+
+        for(const [name, card] of Object.entries(cardDistribution)) {
+            if (name === contractPlayerName) {
+                throw new Error('cannot assign card to yourself');
             }
-            if(name) {
-                delete d[name];
+
+            const i = playerBigHand.indexOf(card);
+            if (i === -1) {
+                throw new Error('cannot find the card in the big hand');
             }
-        } else if(Object.keys(d).length < 2) {
-            // who is the player who has not yet been assigned?
-            let unassignedName = null;
-            const selectingPlayerName = this.props.playerNames[this.state.contractPlayerIndex];
-            for(const name of this.props.playerNames) {
-                if(name !== selectingPlayerName && !(name in d)) {
-                    unassignedName = name;
-                    break;
-                }
-            }
-            if(unassignedName) {
-                console.log(`Assigned ${card.toString()} to ${unassignedName}`);
-                d[unassignedName] = card;
+
+            if (name in newPlayerHands) {
+                // add the card to the new player
+                const cards = newPlayerHands[name].cards.slice();
+                cards.push(card);
+                newPlayerHands[name] = new Hand(cards);
+
+                // remove the card from the big hand
+                playerBigHand.splice(i, 1);
+            } else {
+                throw new Error(`name ${name} must be in playerHands`);
             }
         }
+
+        // we have now distributed the cards
+        // but our original person's hand is not quite right
+        // just need to set it to the big hand
+        newPlayerHands[contractPlayerName] = new Hand(playerBigHand);
 
         this.setState({
-            selectedTreasureCards: d,
-        });
-    }
-
-    async handleDistributeTreasure(): Promise<void> {
-        const playerHands = Object.assign({}, this.state.playerHands);
-        const remainingCards = this.state.treasure.slice();
-        const remainingPlayers = this.props.playerNames.slice();
-
-        console.assert(Object.keys(this.state.selectedTreasureCards).length === 2);
-
-        // first, determine what card the remaining player gets and fill that into m
-        const m = Object.assign({}, this.state.selectedTreasureCards);
-
-        for(const [name, card] of Object.entries(this.state.selectedTreasureCards)) {
-            const i = remainingCards.indexOf(card);
-            remainingCards.splice(i, 1);
-            const j = remainingPlayers.indexOf(name);
-            remainingPlayers.splice(j, 1);
-        }
-
-        console.assert(remainingPlayers.length === 1);
-        console.assert(remainingCards.length === 1);
-        m[remainingPlayers[0]] = remainingCards[0];
-
-        // next distribute the cards among the players
-        for(const [name, card] of Object.entries(m)) {
-            const cards = playerHands[name].cards.slice();
-            cards.push(card);
-            const newHand = new Hand(cards);
-            playerHands[name] = newHand;
-        }
-
-        await this.setState({
-            playerHands: playerHands,
+            playerHands: newPlayerHands,
             phase: GamePhase.PLAYING,
-            isBigHand: true,
+            // the person with the contract goes first
             activePlayerIndex: this.state.contractPlayerIndex,
+        }, () => {
+            this.persistState();
         });
     }
 
@@ -361,8 +448,9 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ITestRoun
         }));
 
         this.setState({
-            // general info
+            // general info / phase
             phase: GamePhase.NOT_DEALT,
+
             // dealing
             treasure: [],
             playerHands: {},
@@ -372,8 +460,6 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ITestRoun
             contractPlayerIndex: -1,
 
             // treasure distribution
-            selectedTreasureCards: {},
-            isBigHand: false,
 
             // playing
             activePlayerIndex: -1,
@@ -386,12 +472,16 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ITestRoun
     }
 
     handleCompleteBidding(winningBid: Bid | null): void {
+        console.log('bidding is complete');
         if(winningBid) {
             const i = this.props.playerNames.indexOf(winningBid.player);
             this.setState({
                 currentContract: winningBid,
                 contractPlayerIndex: i,
                 phase: GamePhase.REVEAL_TREASURE,
+            }, () => {
+                this.props.onChangePhase(GamePhase.REVEAL_TREASURE);
+                this.persistState();
             });
         } else {
             this.props.onRoundOver({}, true);
@@ -400,7 +490,7 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ITestRoun
 
     handleNextRound(scores: {[key: string]: number}): void {
         this.props.onRoundOver(scores, false);
-        this.resetRound()
+        this.resetRound();
     }
 
     render(): JSX.Element {
@@ -429,7 +519,7 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ITestRoun
             case GamePhase.NOT_DEALT: {
                 return <div>
                     <div>{ this.props.playerNames[this.props.dealerIndex] } is dealing</div>
-                    <button type="button" className="btn btn-primary btn-lg"
+                    <button type="button" className="btn btn-success btn-lg"
                         onClick={this.dealCards}>Deal</button>
                 </div>;
             }
@@ -442,14 +532,17 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ITestRoun
                     localPlayerIndex={this.props.localPlayerIndex} />
             }
             case GamePhase.REVEAL_TREASURE: {
+                if (!this.state.currentContract) {
+                    throw new Error('Current contract is not set in REVEAL_TREASURE phase');
+                }
                 return <RevealTreasureView
+                    localPlayerIndex={this.props.localPlayerIndex}
                     playerNames={this.props.playerNames}
                     playerHands={this.state.playerHands}
                     dealerIndex={this.props.dealerIndex}
                     contractPlayerIndex={this.state.contractPlayerIndex}
+                    contractPoints={this.state.currentContract.points}
                     treasure={this.state.treasure}
-                    selectedTreasureCards={this.state.selectedTreasureCards}
-                    onSelect={this.onSelectTreasureCard}
                     onDistribute={this.handleDistributeTreasure} />;
             }
             case GamePhase.PLAYING: {
