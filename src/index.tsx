@@ -12,6 +12,8 @@ console.debug(`path: ${window.location.pathname}`);
 
 switch (window.location.pathname) {
     case '/':
+        document.title = 'Tysyacha';
+
         ReactDOM.render(
             <React.StrictMode>
                 <LandingView />
@@ -37,6 +39,8 @@ switch (window.location.pathname) {
             window.location.href = '/';
             break;
         }
+
+        document.title = `Tysyacha | Game ${gameId}`;
 
         ReactDOM.render(
             <React.StrictMode>

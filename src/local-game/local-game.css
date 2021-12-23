@@ -43,6 +43,12 @@
     }
 }
 
+@media screen and (min-width: 900px) and (min-height: 1000px) {
+    .bidding-view .player-hand-container {
+        padding-bottom: 4rem;
+    }
+}
+
 .bidding-view .round-info {
     margin: 0 auto;
     max-width: 600px;

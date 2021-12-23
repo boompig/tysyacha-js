@@ -4,6 +4,26 @@ import { randInt } from "../utils";
 
 interface IProps {};
 
+const GAME_ID_LENGTH = 6;
+
+/**
+ * The game ID is a string containing numbers 0-9 and letters a-z
+ * It will be of length GAME_ID_LENGTH
+ * This provides a nice balance between entropy (possible values) and length
+ */
+function randomGameId(): string {
+    let gameId = "";
+    for (let i = 0; i < GAME_ID_LENGTH; i++) {
+        const j = randInt(87, 123);
+        if (j < 97) {
+            gameId += (j - 87).toString();
+        } else {
+            gameId += String.fromCharCode(j);
+        }
+    }
+    return gameId;
+}
+
 const MAX_GAME_ID = 1e9;
 
 /**
@@ -14,7 +34,7 @@ const LandingView : FC <IProps> = (props: IProps) => {
         e.preventDefault();
 
         // generate a unique random game ID
-        const gameId = randInt(1, MAX_GAME_ID);
+        const gameId = randomGameId();
         // navigate to the right page
         const url = new URL(`${window.location.protocol}//${window.location.host}`);
         url.pathname = '/local-ai-game';
