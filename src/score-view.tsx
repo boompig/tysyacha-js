@@ -46,7 +46,7 @@ const ScoreView : FC<IScoreViewProps> = (props: IScoreViewProps) => {
 
     const scoreRows = rounds.map((round: number) => {
         const scoreRow = props.playerNames.map((name: string) => {
-            return <td key={`score-row-${name}-round-${round}`}>{ props.scores[name][round] }</td>;
+            return <td key={`score-row-${name}-round-${round}`}>{ props.scores[name][round] || 0 }</td>;
         });
         const classes : string[] = [];
         if (props.selectedRound === round) {

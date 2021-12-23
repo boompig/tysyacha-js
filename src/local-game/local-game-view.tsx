@@ -5,14 +5,8 @@ import "./local-game.css";
 import { GamePhase } from "../game-mechanics";
 import { Navbar } from "./navbar";
 import { LoadingView } from "./loading-view";
+import { randInt } from "../utils";
 
-/**
- * Generate a random number in the half-open interval [a, b)
- * Both a and b are assumed to be integers
- */
-function randInt(a: number, b: number): number {
-    return Math.floor(Math.random() * (b - a)) + a;
-}
 /**
  * This function generates the player names given the human player's name
  * Mostly generates AI player names
@@ -257,6 +251,9 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
                 console.log(`number of failed deals is now ${this.state.numFailedDeals}`);
             });
         } else {
+            // current round must be at least 1
+            console.assert(this.state.round > 0);
+
             if (isEarlyExit && this.state.numFailedDeals === 2) {
                 console.log('3 failed deals! Bolt!');
                 scores = this.getBoltScores();
@@ -266,8 +263,14 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
 
             console.log(`Round ${this.state.round} is over.`);
             const newScores = Object.assign({}, this.state.scores);
+            console.log(this.state.scores);
             for(const [name, pts] of Object.entries(scores)) {
-                newScores[name][this.state.round] += pts;
+                // there should be scores from the previous round
+                // but if not, set them to zero
+                if (!newScores[name][this.state.round - 1]) {
+                    newScores[name][this.state.round - 1] = 0;
+                }
+                newScores[name][this.state.round] = newScores[name][this.state.round - 1] + pts;
             }
             this.setState({
                 scores: newScores,
