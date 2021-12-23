@@ -1,0 +1,24 @@
+main {
+    margin-top: 2vh;
+}
+
+.name-form button {
+    margin-top: .5rem;
+}
+
+.btn-container {
+    padding-top: 3vh;
+    padding-bottom: 3vh;
+}
+
+.btn-container button:not(:first-of-type) {
+    margin-left: 1rem;
+}
+
+.create-game-view button, .create-game-view a, .join-game-view a, .join-game-view button {
+    margin-top: 1rem;
+}
+
+.create-game-view form, .join-game-view form {
+    max-width: 500px;
+}

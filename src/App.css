@@ -1,0 +1,55 @@
+html, body {
+	font-size: 1rem;
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+main {
+	margin-top: 5vh;
+}
+
+.player-container {
+	display: flex;
+	justify-content: space-between;
+}
+
+.player {
+	padding-left: .5rem;
+	padding-right: .5rem;
+}
+
+.player-name.active-player {
+	font-weight: bold;
+	color: #0c82c7;
+}
+
+.player-cards-suit {
+	padding-right: .5rem;
+}
+
+header {
+	text-align: center;
+}
+
+header .game-id {
+	font-size: 1.1rem;
+}
+
+.round-view {
+	padding-top: 1rem;
+}
+
+.bid-history-container .highest-bid {
+	margin-bottom: .5rem;
+}
+
+.game-round.active {
+	font-weight: bold;
+}
+
+.btn-container {
+	padding-top: 1rem;
+}
+
+.bidding-form .btn {
+	margin-top: 1rem;
+}
