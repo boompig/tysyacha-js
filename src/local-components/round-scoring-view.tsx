@@ -3,9 +3,9 @@
  */
 
 import React from "react";
-import {Bid, computeRoundScores, ITrickCard, IPastTrick} from "../game-mechanics";
-import {Suit} from "../cards";
-import {CardView} from "./card-view";
+import { Bid, computeRoundScores, ITrickCard } from "../game-mechanics";
+import { Suit } from "../cards";
+import { CardView } from "./card-view";
 
 interface IScoringViewProps {
     contract: Bid;

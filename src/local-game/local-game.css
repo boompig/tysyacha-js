@@ -87,3 +87,39 @@
 .assignment-table-container {
     padding-top: 1rem;
 }
+
+.trick-taking-view .card-selected {
+    background-color: yellow;
+}
+
+.trick-taking-view .player-hand-container {
+    position: absolute;
+    bottom: 3rem;
+    width: 90%;
+}
+
+.trick-taking-view form {
+    margin: 0 auto;
+    text-align: center;
+}
+
+.trick-taking-view .turn-container {
+    margin: 0 auto;
+    text-align: center;
+}
+
+.trick-taking-view .current-trick-wrapper {
+    position: absolute;
+    top: 45vh;
+    width: 90%;
+    /* max-width: 800px; */
+    /* margin: 0 auto; */
+}
+
+.trick-taking-view .current-trick-container {
+    margin: 0 auto;
+    max-width: 500px;
+    width: 400px;
+    display: flex;
+    justify-content: space-between;
+}

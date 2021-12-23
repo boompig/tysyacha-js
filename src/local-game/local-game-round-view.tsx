@@ -1,12 +1,13 @@
 import React, { PureComponent } from "react";
 import "../card.css";
 import { Card, CardValue, Deck, Hand, Suit } from "../cards";
-import { Bid, canPlayCard, GamePhase, getWinningCard, ITrickCard } from "../game-mechanics";
+import { Bid, GamePhase, getWinningCard, ITrickCard } from "../game-mechanics";
 import { CardView } from "../local-components/card-view";
 import { PlayerView } from "../local-components/player-view";
 import { RoundScoringView } from "../local-components/round-scoring-view";
 import { BiddingView } from "./bidding-view";
 import { RevealTreasureView } from "../local-components/reveal-treasure-view";
+import { TrickTakingView } from "./trick-taking-view";
 
 interface ITestRoundProps {
     gameId: string;
@@ -66,6 +67,7 @@ interface ISavedRoundState {
     phase: GamePhase;
 
     // after deal phase (and card distribution)
+    // the playerHands are changed during the playing phase
     playerHands: {[key: string]: Hand};
     treasure: Card[];
 
@@ -73,7 +75,7 @@ interface ISavedRoundState {
     currentContract: Bid | null;
     contractPlayerIndex: number;
 
-    // after card distribution
+    // during playing phase
     activePlayerIndex: number;
 }
 
@@ -118,12 +120,15 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
             declaredMarriages: {},
         };
 
+        // event handlers
         this.dealCards = this.dealCards.bind(this);
-        this.onPlayCard = this.onPlayCard.bind(this);
+        this.handlePlayCard = this.handlePlayCard.bind(this);
         this.handleCompleteBidding = this.handleCompleteBidding.bind(this);
         this.handleDistributeTreasure = this.handleDistributeTreasure.bind(this);
         this.handleNextRound = this.handleNextRound.bind(this);
+        this.handleDismissTrick = this.handleDismissTrick.bind(this);
         this.resetRound = this.resetRound.bind(this);
+        // state operations
         this.readSavedState = this.readSavedState.bind(this);
         this.persistState = this.persistState.bind(this);
     }
@@ -201,138 +206,108 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
     }
 
     /**
-     * This is a helper method to get us to a good state
-     */
-    async autoPlay(): Promise<void> {
-        if(this.state.phase !== GamePhase.PLAYING) {
-            console.error("phase must be PLAYING to autoplay");
-            return;
-        }
-        console.log("Starting autoplay...");
-        while(this.state.phase === GamePhase.PLAYING) {
-            // find the active player
-            const activePlayer = this.props.playerNames[this.state.activePlayerIndex];
-            const hand = this.state.playerHands[activePlayer];
-            let cardIndex = -1;
-            if(this.state.currentTrick.length === 0 && this.state.trickNumber > 0) {
-                // try to declare a marriage
-                if(hand.marriages.length > 0) {
-                    // pick the first marriage
-                    const suit = hand.marriages[0];
-                    // find the queen and play it
-                    for(let i = 0; i < hand.cards.length; i++) {
-                        const card = hand.cards[i];
-                        if(card.value === CardValue.QUEEN && card.suit === suit) {
-                            cardIndex = i;
-                            break;
-                        }
-                    }
-                }
-            } else if(this.state.currentTrick.length === 0 && this.state.trickNumber === 0) {
-                // for the first trick, try to play an ace if you have one
-                for(let i = 0; i < hand.cards.length; i++) {
-                    const card = hand.cards[i];
-                    if(card.value === CardValue.ACE) {
-                        cardIndex = i;
-                        break;
-                    }
-                }
-            }
-            if(cardIndex === -1) {
-                // find the cards this player can play
-                const playableCards = [];
-                for(let i = 0; i < hand.cards.length; i++) {
-                    if(canPlayCard(hand, this.state.currentTrick, hand.cards[i])) {
-                        playableCards.push(i);
-                    }
-                }
-                // just get the first playable card
-                cardIndex = playableCards[0];
-            }
-            await this.onPlayCard(this.state.activePlayerIndex, cardIndex);
-        }
-        console.log("Autoplay has finished.");
-    }
-
-    /**
      * A given player plays the given card (on their turn)
      * NOTE: no sanity checking here
      */
-    async onPlayCard(playerIndex: number, cardIndex: number): Promise<void> {
-        const name = this.props.playerNames[playerIndex];
-        const card = this.state.playerHands[name].cards[cardIndex];
-        console.log(`[trick ${this.state.trickNumber}] ${name} -> card ${card}`);
+    handlePlayCard(playerIndex: number, cardIndex: number) {
+        if (playerIndex !== this.state.activePlayerIndex) {
+            throw new Error('can only call this method to play a card by the active player');
+        }
+
+        if (this.state.currentTrick.length >= 3) {
+            throw new Error('cannot play additional cards after the current trick has 3 or more cards');
+        }
+
+        const playerName = this.props.playerNames[playerIndex];
+        const card = this.state.playerHands[playerName].cards[cardIndex];
+        console.log(`[trick ${this.state.trickNumber}] ${playerName} -> card ${card}`);
         let isMarriage = false;
 
-        if(playerIndex === this.state.activePlayerIndex) {
-            // add card to the current trick
-            const currentTrick = this.state.currentTrick.slice();
-            currentTrick.push({
-                card: card,
-                player: name,
-            });
+        // add card to the current trick
+        const currentTrick = this.state.currentTrick.slice();
+        currentTrick.push({
+            card: card,
+            player: playerName,
+        });
 
-            // a little trick here - if the card played is part of a marriage, the marriage is auto-declared
-            // NOTE: use *previous* hand here, not the new hand
-            if(currentTrick.length === 1 && (card.value === CardValue.KING || card.value === CardValue.QUEEN) &&
-                this.state.tricksTaken[name].length > 0) {
-                // check to see if they have the other card
-                const hand = this.state.playerHands[name];
-                if(hand.marriages.includes(card.suit)) {
-                    console.log(`[trick ${this.state.trickNumber}] ${name} declared a ${card.suit} marriage`);
-                    isMarriage = true;
-                }
-            }
-
-            // remove card from player hand
-            const newCards = this.state.playerHands[name].cards;
-            newCards.splice(newCards.indexOf(card), 1);
-            const playerHands = Object.assign({}, this.state.playerHands);
-            playerHands[name] = new Hand(newCards);
-
-            if(currentTrick.length === 3) {
-                const winner = getWinningCard(currentTrick, this.state.trumpSuit);
-                const winningPlayerIndex = this.props.playerNames.indexOf(winner.player);
-                // wrap up the trick
-                const pastTricks = {} as {[key: string]: ITrickCard[][]};
-                Object.assign(pastTricks, this.state.tricksTaken);
-                const winningPlayerName = this.props.playerNames[winningPlayerIndex];
-                pastTricks[winningPlayerName].push(currentTrick);
-                console.log(`[trick ${this.state.trickNumber}] ${winningPlayerName} won the trick. They play the next hand.`);
-                let isDone = false;
-
-                if(this.state.playerHands[winner.player].cards.length === 0) {
-                    // we're done
-                    isDone = true;
-                }
-
-                await this.setState({
-                    currentTrick: [],
-                    activePlayerIndex: winningPlayerIndex,
-                    tricksTaken: pastTricks,
-                    phase: isDone ? GamePhase.SCORING : GamePhase.PLAYING,
-                    trickNumber: this.state.trickNumber + 1,
-                    playerHands: playerHands,
-                });
-            } else {
-                const nextPlayer = (this.state.activePlayerIndex + 1) % 3;
-                let declaredMarriages = this.state.declaredMarriages;
-                if(isMarriage) {
-                    declaredMarriages = Object.assign({}, this.state.declaredMarriages);
-                    if(!(name in declaredMarriages)) {
-                        declaredMarriages[name] = [];
-                    }
-                    declaredMarriages[name].push(card.suit);
-                }
-                await this.setState({
-                    currentTrick: currentTrick,
-                    activePlayerIndex: nextPlayer,
-                    trumpSuit: isMarriage ? card.suit : this.state.trumpSuit,
-                    declaredMarriages: declaredMarriages,
-                    playerHands: playerHands,
-                });
+        // a little trick here - if the card played is part of a marriage, the marriage is auto-declared
+        // NOTE: use *previous* hand here, not the new hand
+        if(currentTrick.length === 1 && (card.value === CardValue.KING || card.value === CardValue.QUEEN) &&
+            this.state.tricksTaken[playerName].length > 0) {
+            // check to see if they have the other card
+            const hand = this.state.playerHands[playerName];
+            if(hand.marriages.includes(card.suit)) {
+                console.log(`[trick ${this.state.trickNumber}] ${playerName} declared a ${card.suit} marriage`);
+                isMarriage = true;
             }
         }
+
+        // remove card from player hand
+        const newCards = this.state.playerHands[playerName].cards.slice();
+        newCards.splice(newCards.indexOf(card), 1);
+        const playerHands = Object.assign({}, this.state.playerHands);
+        playerHands[playerName] = new Hand(newCards);
+
+        if (currentTrick.length === 3) {
+            const winner = getWinningCard(currentTrick, this.state.trumpSuit);
+            const winningPlayerIndex = this.props.playerNames.indexOf(winner.player);
+            // update current trick and player hands
+            // update who the next player is
+            // but *do not* move the current trick into past tricks
+            // also *do not* update the phase
+            this.setState({
+                currentTrick: currentTrick,
+                playerHands: playerHands,
+                activePlayerIndex: winningPlayerIndex,
+            });
+        } else {
+            const nextPlayer = (this.state.activePlayerIndex + 1) % 3;
+            let declaredMarriages = this.state.declaredMarriages;
+            if(isMarriage) {
+                declaredMarriages = Object.assign({}, this.state.declaredMarriages);
+                if(!(playerName in declaredMarriages)) {
+                    declaredMarriages[playerName] = [];
+                }
+                declaredMarriages[playerName].push(card.suit);
+            }
+            this.setState({
+                currentTrick: currentTrick,
+                activePlayerIndex: nextPlayer,
+                trumpSuit: isMarriage ? card.suit : this.state.trumpSuit,
+                declaredMarriages: declaredMarriages,
+                playerHands: playerHands,
+            });
+        }
+    }
+    /**
+     * Once a trick is complete, it is shown to the player
+     * This button dismisses the trick
+     * This function should be called by the human player
+     * Note that the player hands have already been updated
+     */
+    handleDismissTrick() {
+        const winner = getWinningCard(this.state.currentTrick, this.state.trumpSuit);
+        const winningPlayerIndex = this.props.playerNames.indexOf(winner.player);
+        // wrap up the trick
+        const pastTricks = {} as { [key: string]: ITrickCard[][] };
+        Object.assign(pastTricks, this.state.tricksTaken);
+        const winningPlayerName = this.props.playerNames[winningPlayerIndex];
+        pastTricks[winningPlayerName].push(this.state.currentTrick);
+        console.log(`[trick ${this.state.trickNumber}] ${winningPlayerName} won the trick. They play the next hand.`);
+        let isDone = false;
+
+        if (this.state.playerHands[winner.player].cards.length === 0) {
+            // we're done
+            isDone = true;
+        }
+
+        this.setState({
+            currentTrick: [],
+            activePlayerIndex: winningPlayerIndex,
+            tricksTaken: pastTricks,
+            phase: isDone ? GamePhase.SCORING : GamePhase.PLAYING,
+            trickNumber: this.state.trickNumber + 1,
+        });
     }
 
     /**
@@ -468,6 +443,8 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
             tricksTaken: tricksTaken,
             trickNumber: 0,
             declaredMarriages: {},
+        }, () => {
+            this.persistState();
         });
     }
 
@@ -504,7 +481,7 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
                 isContractPlayer={i === this.state.contractPlayerIndex}
                 isActivePlayer={i === this.state.activePlayerIndex}
                 tricksTaken={this.state.tricksTaken[name]}
-                onCardSelect={this.onPlayCard}
+                onCardSelect={this.handlePlayCard}
                 numTricksTaken={this.state.tricksTaken[name].length}
                 showCards={this.props.isAllCardsShown || (i === this.props.localPlayerIndex)} />
         });
@@ -551,28 +528,26 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
                     throw new Error("there must be a contract in this pahse");
                 }
 
-                return <div className="table container">
-                    <div className="dealt-table">
-                        <div className="game-status">
-                            <h3>Status</h3>
-                            <div>Contract is for {this.state.currentContract.points} points</div>
-                            <div>{ this.state.trumpSuit ? `trump is ${this.state.trumpSuit}` : "no trump yet" }</div>
-                        </div>
-                        <div className="trick">
-                            <h3>Trick</h3>
-                            {trick.length === 0 ? "no cards in current trick" :
-                                <div className="trick-card-container">
-                                    {trick}
-                                </div>}
-                        </div>
-                        <div className="player-hands">
-                            <h3>Players</h3>
-                            {playerHands}
-                        </div>
-                        <button type="button" className="btn btn-primary btn-lg"
-                            onClick={(e) => {return this.autoPlay()}}>Autoplay</button>
-                    </div>
-                </div>;
+                return <TrickTakingView
+                    // properties of the game
+                    playerNames={this.props.playerNames}
+                    localPlayerIndex={this.props.localPlayerIndex}
+                    dealerIndex={this.props.dealerIndex}
+
+                    // properties of the round
+                    contractPlayerIndex={this.state.contractPlayerIndex}
+                    contractPoints={this.state.currentContract.points}
+                    playerHands={this.state.playerHands}
+                    currentTrick={this.state.currentTrick}
+                    activePlayerIndex={this.state.activePlayerIndex}
+                    tricksTaken={this.state.tricksTaken}
+                    trumpSuit={this.state.trumpSuit}
+                    numPastTricks={this.state.trickNumber}
+
+                    // callbacks
+                    onPlayCard={this.handlePlayCard}
+                    onDimissTrick={this.handleDismissTrick}
+                />
             }
             case GamePhase.SCORING: {
                 if(!this.state.currentContract) {

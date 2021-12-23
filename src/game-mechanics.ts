@@ -76,7 +76,7 @@ export function isMarriagePlayed(card: Card, hand: Hand, totalTricks: number, is
 
 export function getWinningCard(cards: ITrickCard[], marriage: null | Suit): ITrickCard {
     if (cards.length !== 3) {
-        throw new Error('There must be only 3 cards be trick');
+        throw new Error(`There must only be 3 cards in the current trick, found ${cards.length}`);
     }
     let winningP = cards[0].player;
     let bestCard = cards[0].card;

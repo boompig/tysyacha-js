@@ -257,9 +257,11 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
                 console.log(`number of failed deals is now ${this.state.numFailedDeals}`);
             });
         } else {
-            if (isEarlyExit && this.state.numFailedDeals) {
+            if (isEarlyExit && this.state.numFailedDeals === 2) {
                 console.log('3 failed deals! Bolt!');
                 scores = this.getBoltScores();
+            } else {
+                console.log(scores);
             }
 
             console.log(`Round ${this.state.round} is over.`);
@@ -272,6 +274,8 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
                 round: this.state.round + 1,
                 dealerIndex: (this.state.dealerIndex + 1) % 3,
                 numFailedDeals: 0,
+            }, () => {
+                this.saveGameState();
             });
         }
     }

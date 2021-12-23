@@ -1,13 +1,10 @@
 import React, {FC} from "react";
-import "./landing-view.css"
+import "./landing-view.css";
+import { randInt } from "../utils";
 
 interface IProps {};
 
 const MAX_GAME_ID = 1e9;
-
-function randInt(a: number, b: number): number {
-    return Math.floor(Math.random() * (b - a)) + a;
-}
 
 /**
  * Land on this page when you go to the index
