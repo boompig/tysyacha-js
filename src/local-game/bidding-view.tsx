@@ -96,7 +96,7 @@ export const BiddingView : FC<IBiddingViewProps> = (props: IBiddingViewProps) =>
                 player: playerName,
             };
         } else {
-            newBid = AI.getBid(bidHistory, playerName);
+            newBid = AI.getBid(bidHistory, props.playerHands[playerName], playerName);
         }
         addBid(newBid, biddingPlayerIndex);
     }

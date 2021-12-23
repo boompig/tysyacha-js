@@ -1,12 +1,13 @@
 import React, { PureComponent } from "react";
 import "../card.css";
 import { Card, CardValue, Deck, Hand, Suit } from "../cards";
+import { DistributeCardsView } from "./distribute-cards-view";
 import { Bid, GamePhase, getWinningCard, ITrickCard } from "../game-mechanics";
 import { CardView } from "../local-components/card-view";
 import { PlayerView } from "../local-components/player-view";
 import { RoundScoringView } from "../local-components/round-scoring-view";
 import { BiddingView } from "./bidding-view";
-import { RevealTreasureView } from "../local-components/reveal-treasure-view";
+import { RevealTreasureView } from "./reveal-treasure-view";
 import { TrickTakingView } from "./trick-taking-view";
 
 interface ITestRoundProps {
@@ -66,7 +67,7 @@ interface ILocalRoundState {
 interface ISavedRoundState {
     phase: GamePhase;
 
-    // after deal phase (and card distribution)
+    // after deal phase (and REVEAL_TREASURE and DISTRIBUTE_CARDS)
     // the playerHands are changed during the playing phase
     playerHands: {[key: string]: Hand};
     treasure: Card[];
@@ -122,9 +123,10 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
 
         // event handlers
         this.dealCards = this.dealCards.bind(this);
-        this.handlePlayCard = this.handlePlayCard.bind(this);
         this.handleCompleteBidding = this.handleCompleteBidding.bind(this);
-        this.handleDistributeTreasure = this.handleDistributeTreasure.bind(this);
+        this.handleFinalizeContract = this.handleFinalizeContract.bind(this);
+        this.handleDistributeCards = this.handleDistributeCards.bind(this);
+        this.handlePlayCard = this.handlePlayCard.bind(this);
         this.handleNextRound = this.handleNextRound.bind(this);
         this.handleDismissTrick = this.handleDismissTrick.bind(this);
         this.resetRound = this.resetRound.bind(this);
@@ -203,6 +205,42 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
             console.debug('not found');
             return null;
         }
+    }
+
+    /**
+     * Called by the contract holder
+     * Finalizes the contract
+     * Advances the phase to DISTRIBUTE_CARDS
+     */
+    handleFinalizeContract(contractPoints: number) {
+        console.assert(this.state.phase === GamePhase.REVEAL_TREASURE);
+        if (!this.state.currentContract) {
+            throw new Error('there must be an existing contract');
+        }
+        if (contractPoints < this.state.currentContract.points) {
+            throw new Error('cannot reduce contract point value');
+        }
+
+        const contractPlayerName = this.state.currentContract.player;
+
+        const newContract: Bid = {
+            player: contractPlayerName,
+            points: contractPoints,
+        };
+
+        // move the treasure into the contract player's hand
+        const oldCards = this.state.playerHands[contractPlayerName].cards;
+        const newCards = [...oldCards, ...this.state.treasure];
+        const newPlayerHands = Object.assign({}, this.state.playerHands);
+        newPlayerHands[contractPlayerName] = new Hand(newCards);
+
+        this.setState({
+            currentContract: newContract,
+            phase: GamePhase.DISTRIBUTE_CARDS,
+            playerHands: newPlayerHands,
+        }, () => {
+            this.persistState();
+        });
     }
 
     /**
@@ -368,14 +406,15 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
      * This will advance the phase to PLAYING
      * @param cardDistribution Map from player names to card objects
      */
-    handleDistributeTreasure(cardDistribution: {[key: string]: Card}) {
+    handleDistributeCards(cardDistribution: {[key: string]: Card}) {
+        console.assert(this.state.phase === GamePhase.DISTRIBUTE_CARDS);
         console.assert(Object.keys(cardDistribution).length === 2);
         console.assert(this.state.treasure.length === 3);
 
         const contractPlayerName = this.props.playerNames[this.state.contractPlayerIndex];
         // the "big hand" is composed out of the cards in that player's hand and the treasure cards
+        // this was previously created in the REVEAL_TREASURE phase
         const playerBigHand = this.state.playerHands[contractPlayerName].cards;
-        playerBigHand.push(...this.state.treasure);
 
         const newPlayerHands = Object.assign({}, this.state.playerHands);
 
@@ -513,14 +552,32 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
                     throw new Error('Current contract is not set in REVEAL_TREASURE phase');
                 }
                 return <RevealTreasureView
+                    // game props
                     localPlayerIndex={this.props.localPlayerIndex}
                     playerNames={this.props.playerNames}
-                    playerHands={this.state.playerHands}
                     dealerIndex={this.props.dealerIndex}
+                    // round props
+                    playerHands={this.state.playerHands}
                     contractPlayerIndex={this.state.contractPlayerIndex}
                     contractPoints={this.state.currentContract.points}
                     treasure={this.state.treasure}
-                    onDistribute={this.handleDistributeTreasure} />;
+                    onFinalizeContract={this.handleFinalizeContract} />;
+            }
+            case GamePhase.DISTRIBUTE_CARDS: {
+                if (!this.state.currentContract) {
+                    throw new Error('Current contract is not set in DISTRIBUTE_CARDS phase');
+                }
+
+                return <DistributeCardsView
+                    // game props
+                    localPlayerIndex={this.props.localPlayerIndex}
+                    playerNames={this.props.playerNames}
+                    dealerIndex={this.props.dealerIndex}
+                    // round props
+                    playerHands={this.state.playerHands}
+                    contractPlayerIndex={this.state.contractPlayerIndex}
+                    contractPoints={this.state.currentContract.points}
+                    onDistribute={this.handleDistributeCards} />;
             }
             case GamePhase.PLAYING: {
             // playing

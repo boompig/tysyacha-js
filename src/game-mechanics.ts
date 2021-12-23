@@ -1,11 +1,31 @@
 import { Card, Hand, CardValue, Suit, ICard, getMarriageValue } from "./cards";
 
 export enum GamePhase {
+    /**
+     * The first phase - we wait until a deal is initiated
+     */
     NOT_DEALT = 0,
+    /**
+     * The cards have been dealt and the treasure cards have been allocated
+     */
     BIDDING = 1,
+    /**
+     * The treasure is revealed to all players
+     * The player who won the bidding phase may revise their contract up
+     */
     REVEAL_TREASURE = 2,
+    /**
+     * The treasure cards have been moved to the player who holds the contract
+     * The contract player must now allocate one card to each opponent
+     */
     DISTRIBUTE_CARDS = 3,
+    /**
+     * The players take tricks
+     */
     PLAYING = 4,
+    /**
+     * All past tricks are shown and scores are calculated
+     */
     SCORING = 5,
 }
 

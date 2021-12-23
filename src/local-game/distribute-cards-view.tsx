@@ -1,25 +1,28 @@
 import React, { FC, useState } from "react";
 import { Card, Hand } from "../cards";
-import { CardView } from "./card-view";
-import { PlayerView } from "./player-view";
+import { CardView } from "../local-components/card-view";
+import { PlayerView } from "../local-components/player-view";
 import { GamePhase } from "../game-mechanics";
 
+
 interface IDistributeCardsView {
+    // game props
+
     playerNames: string[];
     /**
      * Index of the local (human) player
      */
     localPlayerIndex: number;
-
-    playerHands: {[key: string]: Hand};
     dealerIndex: number;
-    contractPoints: number;
-    contractPlayerIndex: number;
+
+    // round props
 
     /**
-     * This is a "big hand" which includes the treasure cards
+     * The player hands have been changed so that the contract player holds the treasure cards
      */
-    contractPlayerHand: Hand;
+    playerHands: {[key: string]: Hand};
+    contractPoints: number;
+    contractPlayerIndex: number;
 
     onDistribute: (selectedCards: {[key: string]: Card}) => any;
 }
@@ -31,6 +34,9 @@ const DistributeCardsView: FC<IDistributeCardsView> = (props: IDistributeCardsVi
     if (props.localPlayerIndex !== props.contractPlayerIndex) {
         throw new Error('Only use this view when the human player is distributing the cards');
     }
+
+    const contractPlayerName = props.playerNames[props.contractPlayerIndex]
+    const contractPlayerHand = props.playerHands[contractPlayerName];
 
     // index into playerNames - who we're giving the selected card to
     let [targetPlayer, setTargetPlayer] = useState(-1);
@@ -91,7 +97,7 @@ const DistributeCardsView: FC<IDistributeCardsView> = (props: IDistributeCardsVi
         // massage data into format expected by parent
         const selectedCards = {} as {[key: string]: Card};
         Object.entries(cardDist).forEach(([playerName, cardIndex]) => {
-            const card = props.contractPlayerHand.cards[cardIndex];
+            const card = contractPlayerHand.cards[cardIndex];
             selectedCards[playerName] = card;
         });
         // and send it over
@@ -104,7 +110,7 @@ const DistributeCardsView: FC<IDistributeCardsView> = (props: IDistributeCardsVi
             <PlayerView
                 name={humanPlayerName}
                 playerIndex={props.localPlayerIndex}
-                hand={props.contractPlayerHand}
+                hand={contractPlayerHand}
                 phase={GamePhase.BIDDING}
                 isDealer={props.localPlayerIndex === props.dealerIndex}
                 tricksTaken={[]}
@@ -123,7 +129,7 @@ const DistributeCardsView: FC<IDistributeCardsView> = (props: IDistributeCardsVi
     if (selectedCard === -1) {
         bottomInstructions = (<p>Select a card to give away</p>);
     } else {
-        bottomInstructions = (<p>You have selected { props.contractPlayerHand.cards[selectedCard].toString() }</p>)
+        bottomInstructions = (<p>You have selected { contractPlayerHand.cards[selectedCard].toString() }</p>)
     }
 
     let elems = [] as JSX.Element[];
@@ -149,7 +155,7 @@ const DistributeCardsView: FC<IDistributeCardsView> = (props: IDistributeCardsVi
             if (index !== props.localPlayerIndex) {
                 const elem = <tr key={`row-${index}`}>
                     <td>{ name }</td>
-                    <td>{ name in cardDist ? props.contractPlayerHand.cards[cardDist[name]].toString() : "unassigned" }</td>
+                    <td>{ name in cardDist ? contractPlayerHand.cards[cardDist[name]].toString() : "unassigned" }</td>
                 </tr>;
                 rows.push(elem);
             }
@@ -157,7 +163,7 @@ const DistributeCardsView: FC<IDistributeCardsView> = (props: IDistributeCardsVi
 
         assignmentTable = (<div className="assignment-table-container">
             <h2>Assignments</h2>
-            <table>
+            <table className="table table-striped">
                 <tbody>{rows}</tbody>
             </table>
             <button type="button" className="btn btn-success btn-lg"
@@ -166,7 +172,7 @@ const DistributeCardsView: FC<IDistributeCardsView> = (props: IDistributeCardsVi
         </div>);
     }
 
-    return (<div className="table container">
+    return (<div className="container distribute-cards-view">
         <div className="dealt-table">
 
             { topInstructions }
@@ -182,7 +188,7 @@ const DistributeCardsView: FC<IDistributeCardsView> = (props: IDistributeCardsVi
 
             { targetPlayer !== -1 && selectedCard !== -1 ?
                 <div>
-                    <p>Give the { props.contractPlayerHand.cards[selectedCard].toString() } to {props.playerNames[targetPlayer]}?</p>
+                    <p>Give the { contractPlayerHand.cards[selectedCard].toString() } to {props.playerNames[targetPlayer]}?</p>
                     <button type="button" className="btn btn-success" onClick={handleAssignCard}>OK</button>
                 </div>
             : null}
@@ -192,117 +198,6 @@ const DistributeCardsView: FC<IDistributeCardsView> = (props: IDistributeCardsVi
     </div>);
 };
 
-interface IRevealTreasureViewProps {
-    playerNames: string[];
-    /**
-     * Index of the local (human) player
-     */
-    localPlayerIndex: number;
-
-    playerHands: {[key: string]: Hand};
-    dealerIndex: number;
-    contractPoints: number;
-    contractPlayerIndex: number;
-
-    treasure: Card[];
-    onDistribute: (selectedCards: {[key: string]: Card}) => any;
-}
-
-/**
- * The treasure has just been revealed!
- * The contract player must now select the cards to distribute to the other players
- */
-const RevealTreasureView : FC<IRevealTreasureViewProps> = (props: IRevealTreasureViewProps) => {
-    const contractPlayerName = props.playerNames[props.contractPlayerIndex];
-    const hand = new Hand([...props.playerHands[contractPlayerName].cards]);
-
-
-    let [isTreasureClaimed, setTreasureClaimed] = useState(false);
-    let [contractPlayerHand, setContractPlayerHand] = useState(hand);
-
-    /**
-     * When the treasure is claimed, the treasure cards are taken into the contract player's hand
-     */
-    function claimTreasure() {
-        let cards = [...contractPlayerHand.cards];
-        cards.push(...props.treasure);
-        const hand = new Hand(cards);
-        setContractPlayerHand(hand);
-        setTreasureClaimed(true);
-    }
-
-    const treasureCards = props.treasure.map((card: Card, i: number) => {
-        let targetPlayer = null;
-        return (<div key={`treasure-card-container-${i}`}>
-            <CardView key={`treasure-card-${i}`}
-                suit={card.suit}
-                value={card.value} />
-            { targetPlayer ?
-                <div className="target-player">sending to {targetPlayer}</div>
-                : null}
-        </div>);
-    });
-
-    const humanPlayerName = props.playerNames[props.localPlayerIndex];
-
-    const playerView = (<div>
-            <PlayerView
-                name={humanPlayerName}
-                playerIndex={props.localPlayerIndex}
-                hand={contractPlayerHand}
-                phase={GamePhase.BIDDING}
-                isDealer={props.localPlayerIndex === props.dealerIndex}
-                tricksTaken={[]}
-                numTricksTaken={0}
-                isContractPlayer={props.localPlayerIndex === props.contractPlayerIndex}
-                isActivePlayer={props.localPlayerIndex === props.contractPlayerIndex}
-                showCards={true} />
-        </div>);
-
-    if (isTreasureClaimed) {
-        return <DistributeCardsView
-            playerNames={props.playerNames}
-            localPlayerIndex={props.localPlayerIndex}
-            playerHands={props.playerHands}
-            dealerIndex={props.dealerIndex}
-            contractPoints={props.contractPoints}
-            contractPlayerIndex={props.contractPlayerIndex}
-            onDistribute={props.onDistribute}
-            contractPlayerHand={contractPlayerHand} />
-    } else {
-        let instructions = null;
-
-        if (props.localPlayerIndex === props.contractPlayerIndex) {
-            instructions = (<p>Congratulations! You won the contract for { props.contractPoints } points.
-                I hope you like the treasure.
-                You must now select two cards to give away, one to each opponent.</p>);
-        }
-
-        return (<div className="table container">
-            <div className="dealt-table">
-                <div>
-                    <h3>Treasure</h3>
-                    <div className="treasure-container">{treasureCards}</div>
-                    {/* { Object.keys(props.selectedTreasureCards).length === 2 ?
-                <button type="button" className="btn btn-primary btn-lg"
-                    onClick={(e) => {return props.onDistribute(props.selectedTreasureCards)}}
-                >Distribute Cards</button> : null } */}
-                </div>
-                <div className="player-hand-container">
-                    <h2>Your Hand</h2>
-                    {playerView}
-                </div>
-
-                {instructions}
-
-                <button type="button" className="btn btn-lg btn-success" onClick={claimTreasure}>Continue</button>
-
-            </div>
-        </div>);
-    }
-};
-
 export {
-    RevealTreasureView,
     DistributeCardsView,
 };

@@ -84,7 +84,16 @@
     padding-top: 1rem;
 }
 
-.assignment-table-container {
+.reveal-treasure-view form {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.reveal-treasure-view form .btn-group {
+    width: 100%;
+}
+
+.distribute-cards-view .assignment-table-container {
     padding-top: 1rem;
 }
 
@@ -94,7 +103,7 @@
 
 .trick-taking-view .player-hand-container {
     position: absolute;
-    bottom: 3rem;
+    bottom: 2rem;
     width: 90%;
 }
 

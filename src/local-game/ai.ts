@@ -8,19 +8,26 @@ import { Hand, Card } from "../cards";
 import { randInt } from "../utils";
 
 
-function getBid(biddingHistory: Bid[], playerName: string): Bid {
+function getBid(biddingHistory: Bid[], hand: Hand, playerName: string): Bid {
     // given the bidding history of other players, return a bet
 
-
     const winningBid = getWinningBid(biddingHistory);
+    const PASS : Bid = {
+        player: playerName,
+        points: 0,
+    };
+
     if (winningBid) {
+        if (winningBid.points >= 120) {
+            // the rule is, to bid over 120 you must have at least 1 marriage
+            if (hand.marriages.length === 0) {
+                return PASS;
+            }
+        }
+
         // randomly we can bid higher or no
         if (Math.random() < .5) {
-            // pass
-            return {
-                player: playerName,
-                points: 0,
-            };
+            return PASS;
         } else {
             return {
                 player: playerName,
@@ -31,10 +38,7 @@ function getBid(biddingHistory: Bid[], playerName: string): Bid {
         // randomly we can bid 60 (minimum) or pass
         if (Math.random() < .5) {
             // pass
-            return {
-                player: playerName,
-                points: 0,
-            };
+            return PASS;
         } else {
             return {
                 player: playerName,
