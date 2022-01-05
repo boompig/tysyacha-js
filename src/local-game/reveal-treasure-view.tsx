@@ -44,7 +44,7 @@ const RevealTreasureView : FC<IRevealTreasureViewProps> = (props: IRevealTreasur
         if (points <= props.contractPoints) {
             setErrorMsg("this is not more than your current contract");
             return;
-        } else if (points % 5 != 0) {
+        } else if (points % 5 !== 0) {
             setErrorMsg("contract points must be a multiple of 5");
             return;
         }

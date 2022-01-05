@@ -3,8 +3,6 @@ import "../card.css";
 import { Card, CardValue, Deck, Hand, Suit } from "../cards";
 import { DistributeCardsView } from "./distribute-cards-view";
 import { Bid, GamePhase, getWinningCard, ITrickCard } from "../game-mechanics";
-import { CardView } from "../local-components/card-view";
-import { PlayerView } from "../local-components/player-view";
 import { RoundScoringView } from "../local-components/round-scoring-view";
 import { BiddingView } from "./bidding-view";
 import { RevealTreasureView } from "./reveal-treasure-view";
@@ -511,27 +509,6 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
     }
 
     render(): JSX.Element {
-        const playerHands = this.props.playerNames.map((name: string, i: number) => {
-            return <PlayerView key={`player-${i}`}
-                name={name}
-                playerIndex={i}
-                hand={this.state.playerHands[name]}
-                phase={this.state.phase}
-                isDealer={i === this.props.dealerIndex}
-                isContractPlayer={i === this.state.contractPlayerIndex}
-                isActivePlayer={i === this.state.activePlayerIndex}
-                tricksTaken={this.state.tricksTaken[name]}
-                onCardSelect={this.handlePlayCard}
-                numTricksTaken={this.state.tricksTaken[name].length}
-                showCards={this.props.isAllCardsShown || (i === this.props.localPlayerIndex)} />
-        });
-
-        const trick = this.state.currentTrick.map((trickCard: ITrickCard, i: number) => {
-            return <CardView key={`trick-card-${i}`}
-                suit={trickCard.card.suit}
-                value={trickCard.card.value} />
-        });
-
         switch(this.state.phase) {
             case GamePhase.NOT_DEALT: {
                 return <div className="dealing-view">

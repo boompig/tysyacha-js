@@ -114,8 +114,24 @@
     width: 100%;
 }
 
+.distribute-cards-view .instructions {
+    padding-top: 1rem;
+}
+
+@media screen and (min-height: 1000px) {
+    .distribute-cards-view.distribute-cards-view-other .player-hand-container {
+        position: absolute;
+        bottom: 10rem;
+        width: 90%;
+    }
+}
+
 .distribute-cards-view .assignment-table-container {
     padding-top: 1rem;
+}
+
+.distribute-cards-view .post-distribute-text {
+    padding-top: 3rem;
 }
 
 .trick-taking-view .card-selected {

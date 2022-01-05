@@ -1,8 +1,9 @@
 import React, { FC, useState } from "react";
 import { Card, Hand } from "../cards";
-import { CardView } from "../local-components/card-view";
 import { PlayerView } from "../local-components/player-view";
 import { GamePhase } from "../game-mechanics";
+import { TableView } from "./table-view";
+import AI from "./ai";
 
 
 interface IDistributeCardsView {
@@ -30,7 +31,7 @@ interface IDistributeCardsView {
 /**
  * NOTE: only show this when the *human player* is distributing the contract cards
  */
-const DistributeCardsView: FC<IDistributeCardsView> = (props: IDistributeCardsView) => {
+const DistributeCardsViewHuman: FC<IDistributeCardsView> = (props: IDistributeCardsView) => {
     if (props.localPlayerIndex !== props.contractPlayerIndex) {
         throw new Error('Only use this view when the human player is distributing the cards');
     }
@@ -196,6 +197,112 @@ const DistributeCardsView: FC<IDistributeCardsView> = (props: IDistributeCardsVi
             { assignmentTable }
         </div>
     </div>);
+};
+
+/**
+ * Show this view if someone other than the current human player is distributing cards
+ */
+const DistributeCardsViewOther: FC<IDistributeCardsView> = (props: IDistributeCardsView) => {
+    const contractPlayerName = props.playerNames[props.contractPlayerIndex];
+    const humanPlayerName = props.playerNames[props.localPlayerIndex];
+
+    /**
+     * True iff the AI has thought and selected which cards to distribute to both players
+     */
+    let [isDistributed, setDistributed] = useState(false);
+    /**
+     * Map from a player's name to the card they will get
+     */
+    let [assignment, setAssignment] = useState({} as {[key: string]: Card})
+
+    /**
+     * Have the AI think about how it wants to distribute cards
+     */
+    function handleAIDistribute () {
+        const newAssignment = AI.distributeCards(props.playerHands[contractPlayerName], props.playerNames, props.contractPlayerIndex);
+        setAssignment(newAssignment);
+        setDistributed(true);
+    }
+
+    /**
+     * The player has viewed the card they received from the AI
+     * Kick it back to the caller
+     */
+    function handleContinue () {
+        props.onDistribute(assignment);
+    }
+
+    let playerHand = props.playerHands[humanPlayerName];
+    if (isDistributed) {
+        // create a new array
+        const playerCards = [...playerHand.cards];
+        const newCard = assignment[humanPlayerName];
+        playerCards.push(newCard);
+        // finally, change the playerHand object
+        playerHand = new Hand(playerCards);
+    }
+
+    return (<div className="container distribute-cards-view distribute-cards-view-other">
+        <TableView
+            playerNames={props.playerNames}
+            localPlayerIndex={props.localPlayerIndex}
+            activePlayerIndex={props.contractPlayerIndex} />
+
+        <p className="instructions">Now the contract player ({contractPlayerName}) will distribute one card to each of the other players (including you).</p>
+
+        { isDistributed ? null :
+            <button type="button" className="btn btn-lg btn-info"
+                onClick={handleAIDistribute}>Continue</button>
+        }
+
+        {
+            isDistributed ?
+            <div className="post-distribute-text">
+                <p>You have just received the card {assignment[humanPlayerName].toString()} from {contractPlayerName}.</p>
+                <button type="button" className="btn btn-success btn-lg"
+                    onClick={handleContinue}>Continue</button>
+            </div>:
+            null
+        }
+
+        <div className="player-hand-container">
+            <h2>Your Hand</h2>
+            <PlayerView
+                name={humanPlayerName}
+                playerIndex={props.localPlayerIndex}
+                // reflects the state of the hand before and after card distribution
+                hand={playerHand}
+                phase={GamePhase.DISTRIBUTE_CARDS}
+                isDealer={props.localPlayerIndex === props.dealerIndex}
+                tricksTaken={[]}
+                numTricksTaken={0}
+                isContractPlayer={false}
+                isActivePlayer={false}
+                showCards={true} />
+        </div>
+    </div>);
+};
+
+const DistributeCardsView: FC<IDistributeCardsView> = (props: IDistributeCardsView) => {
+    if (props.localPlayerIndex === props.contractPlayerIndex) {
+        return <DistributeCardsViewHuman
+            playerNames={props.playerNames}
+            localPlayerIndex={props.localPlayerIndex}
+            dealerIndex={props.dealerIndex}
+            playerHands={props.playerHands}
+            contractPoints={props.contractPoints}
+            contractPlayerIndex={props.contractPlayerIndex}
+            onDistribute={props.onDistribute} />
+    } else {
+        return <DistributeCardsViewOther
+            playerNames={props.playerNames}
+            localPlayerIndex={props.localPlayerIndex}
+            dealerIndex={props.dealerIndex}
+            playerHands={props.playerHands}
+            contractPoints={props.contractPoints}
+            contractPlayerIndex={props.contractPlayerIndex}
+            onDistribute={props.onDistribute} />
+    }
 };
 
 export {

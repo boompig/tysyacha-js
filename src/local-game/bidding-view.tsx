@@ -2,7 +2,7 @@ import React, { FC, useState, useEffect } from "react";
 import { Hand } from "../cards";
 import { Bid, GamePhase, getWinningBid, isBiddingComplete, MIN_BID_POINTS } from "../game-mechanics";
 import AI from "./ai";
-import {PlayerView} from "../local-components/player-view";
+import { PlayerView } from "../local-components/player-view";
 import { BidHistoryView } from "./bid-history-view";
 import { TableView } from "./table-view";
 

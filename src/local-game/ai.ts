@@ -82,8 +82,33 @@ function reevalContract(hand: Hand, treasureCards: Card[], currentContract: numb
     return currentContract;
 }
 
+/**
+ * @param hand The hand contains the treasure cards
+ * @param playerNames Array of player names
+ * @param playerIndex The index of this AI in the array of player names
+ * @returns A map from player names to the cards they will hold
+ * It is guaranteed that each player name (that is not the AI) will have a not-null card assigned to them
+ */
+function distributeCards(hand: Hand, playerNames: string[], playerIndex: number): {[key: string]: Card} {
+    const assignment = {} as {[key: string]: Card};
+
+    const otherPlayerNames = playerNames.filter((name: string, i: number) => {
+        return i !== playerIndex;
+    });
+
+    // TODO assigns random cards to each of the two other players
+    for (let i = 0; i < otherPlayerNames.length; i++) {
+        let name = otherPlayerNames[i];
+        let cardIndex = randInt(0, hand.cards.length);
+        assignment[name] = hand.cards[cardIndex];
+    }
+
+    return assignment;
+}
+
 export default {
     getBid,
     getCard,
     reevalContract,
+    distributeCards,
 };
