@@ -1,7 +1,6 @@
 import React from "react";
 import { IGameInfo, IPlayingPhaseInfo, IRoundInfo } from "../api";
 import { BiddingHistoryView } from "../bidding-view";
-import { Card } from "../cards";
 import { Bid, GamePhase, gamePhaseToString, getWinningBid, groupTricksByPlayer, IDeal } from "../game-mechanics";
 import { RoundScoringView } from "../local-components/round-scoring-view";
 import { PlayerView } from "../player-view";

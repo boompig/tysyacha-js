@@ -4,7 +4,7 @@
  */
 
 import { Bid, canPlayCard, getWinningBid, ITrickCard, MIN_BID_POINTS, UNSAFE_getWinningCard } from "../game-mechanics";
-import { Hand, Card, CardValue, Suit, getMarriageValue, ICard } from "../cards";
+import { Hand, Card, CardValue, Suit, getMarriageValue, getCardValues } from "../cards";
 import { randInt } from "../utils";
 
 /**
@@ -32,21 +32,6 @@ function _getBestMarriageSuit(hand: Hand): Suit | null {
     return bestSuit;
 }
 
-/**
- * Find the index of a given card in the hand.
- * This card is not a card object that exists in hand.cards but a description of the card
- * @returns index into hand.cards if found, -1 otherwise
- */
-function _findCard(hand: Hand, card: ICard): number {
-    for (let i = 0; i < hand.cards.length; i++) {
-        let handCard = hand.cards[i];
-        if (handCard.suit === card.suit && handCard.value === card.value) {
-            return i;
-        }
-    }
-    return -1;
-}
-
 function _findCardValue(hand: Hand, cardValue: CardValue): number {
     for(let i = 0; i < hand.cards.length; i++) {
         let card = hand.cards[i];
@@ -58,6 +43,48 @@ function _findCardValue(hand: Hand, cardValue: CardValue): number {
 }
 
 /**
+ * Make an estimation for how many points we can take with this hand
+ * Return value *guaranteed* to be a multiple of 5.
+ */
+function _evaluateHand(hand: Hand): number {
+    // TODO algo here is very primitive
+
+    if (hand.cards.length !== 7 && hand.cards.length !== 8) {
+        throw new Error(`[AI] Expected hand to have 7 or 8 cards in evaluation, found ${hand.cards.length}`);
+    }
+
+    let expectedPoints = 0;
+
+    // right now we assume we can't declare a marriage without an ace
+    const hasAce = _hasAce(hand);
+    const bestMarriageSuit = _getBestMarriageSuit(hand);
+    if (hasAce && bestMarriageSuit) {
+        expectedPoints += getMarriageValue(bestMarriageSuit);
+    }
+
+    // calculate how many points
+    for (let suit of Object.keys(hand.cardsBySuit)) {
+        const cardVals = getCardValues();
+
+        for (let i = 0; i < hand.cardsBySuit[suit].length; i++) {
+            // right now we only calculate our own points
+            let card = hand.cardsBySuit[suit][i];
+            if (card.value === cardVals[i]) {
+                expectedPoints += card.value;
+            }
+        }
+    }
+
+    if (expectedPoints % 5 <= 2) {
+        // 0, 1, 2 -> 0
+        return expectedPoints - (expectedPoints % 5);
+    } else {
+        // 3, 4 -> 5
+        return expectedPoints - (expectedPoints % 5) + 5;
+    }
+}
+
+/**
  * Return a bid given this player's hand and the bidding history
  * @param biddingHistory An array with each element representing both a bid and a player, in temporal order (last element is most recent)
  * @param hand The player's hand
@@ -65,7 +92,7 @@ function _findCardValue(hand: Hand, cardValue: CardValue): number {
  * @returns A bid, representing this AI. Guaranteed to be valid.
  */
 function getBid(biddingHistory: Bid[], hand: Hand, playerName: string): Bid {
-    // given the bidding history of other players, return a bet
+    // for now the AI doesn't bluff
 
     const winningBid = getWinningBid(biddingHistory);
     const PASS : Bid = {
@@ -73,16 +100,8 @@ function getBid(biddingHistory: Bid[], hand: Hand, playerName: string): Bid {
         points: 0,
     };
 
-    // make some assumptions about how many points we can take
-    let expectedPoints = 0;
-    const hasAce = _hasAce(hand);
-    const bestMarriageSuit = _getBestMarriageSuit(hand);
-    if (hasAce && bestMarriageSuit) {
-        // for now we just assume that we can only make this amount
-        expectedPoints = 15 + getMarriageValue(bestMarriageSuit);
-    } else {
-        expectedPoints = 0;
-    }
+    const expectedPoints = _evaluateHand(hand);
+    console.debug(`${playerName} AI evaluated hand at ${expectedPoints} points`);
 
     if ((winningBid && expectedPoints > winningBid.points) || (!winningBid && expectedPoints >= MIN_BID_POINTS)) {
         return {
@@ -122,7 +141,7 @@ function _playRandomCard(hand: Hand, currentTrick: ITrickCard[], trumpSuit: Suit
  * @param trumpSuit Null if no current trump. Otherwise the current trump suit.
  * @returns The card index to player relative to `playerHand.cards`
  */
-function getCard(hand: Hand, currentTrick: ITrickCard[], tricksTaken: {[key: string]: ITrickCard[][]}, trumpSuit: Suit | null, playerName: string): number {
+function playCard(hand: Hand, currentTrick: ITrickCard[], tricksTaken: {[key: string]: ITrickCard[][]}, trumpSuit: Suit | null, playerName: string): number {
     if (hand.cards.length === 0) {
         throw new Error("player hand cannot be empty");
     }
@@ -140,7 +159,7 @@ function getCard(hand: Hand, currentTrick: ITrickCard[], tricksTaken: {[key: str
                 throw new Error('best marriage suit cannot be null if hand has marriages');
             }
             // always play the queen
-            return _findCard(hand, {
+            return hand.findCard({
                 value: CardValue.QUEEN,
                 suit: bestMarriageSuit,
             });
@@ -215,23 +234,50 @@ function getCard(hand: Hand, currentTrick: ITrickCard[], tricksTaken: {[key: str
 
 /**
  * This AI holds the contract
- * Re-evaluate what we want to bid in the fact of the newly revealed treasure cards
+ * Re-evaluate what we want to bid in the face of the newly revealed treasure cards
  * The number returned is *guaranteed* to be >= `currentContract`
+ * @param hand Holds 7 cards, so does not include the treasure cards
+ * @param treasureCards The revealed treasure cards
  */
-function reevalContract(hand: Hand, treasureCards: Card[], currentContract: number): number {
-    // TODO for now always keep it the same
-    return currentContract;
+function reevalContract(hand: Hand, treasureCards: Card[], currentContract: number, playerNames: string[], playerIndex: number): number {
+    const playerName = playerNames[playerIndex];
+    if (!hand) {
+        throw new Error(`[AI] hand is undefined in reevalContract for player ${playerName}`);
+    }
+
+    // TODO for now don't gamble
+
+    const bigHandCards = [...hand.cards, ...treasureCards];
+    const bigHand = new Hand(bigHandCards);
+
+    // figure out how the cards are going to be distributed
+    const assignments = distributeCards(bigHand, playerNames, playerIndex);
+
+    // now create a hand without the cards in the assignments
+    const assignedCards = Object.values(assignments);
+    const newCards = [...bigHand.cards];
+    for (let i = 0; i < assignedCards.length; i++) {
+        const card = assignedCards[i];
+        const j = newCards.indexOf(card)
+        newCards.splice(j, 1);
+    }
+    const newHand = new Hand(newCards);
+
+    // how much can we make with that hand?
+    const newContract = _evaluateHand(newHand);
+
+    if (newContract > currentContract) {
+        return newContract;
+    } else {
+        return currentContract;
+    }
 }
 
 /**
- * @param hand The hand contains the treasure cards
- * @param playerNames Array of player names
- * @param playerIndex The index of this AI in the array of player names
- * @returns A map from player names to the cards they will hold
- * It is guaranteed that each player name (that is not the AI) will have a not-null card assigned to them
+ * Totally random card distribution, nice and simple
  */
-function distributeCards(hand: Hand, playerNames: string[], playerIndex: number): {[key: string]: Card} {
-    const assignment = {} as {[key: string]: Card};
+function distributeCardsRandomly(hand: Hand, playerNames: string[], playerIndex: number) {
+ const assignment = {} as {[key: string]: Card};
 
     const otherPlayerNames = playerNames.filter((name: string, i: number) => {
         return i !== playerIndex;
@@ -247,9 +293,67 @@ function distributeCards(hand: Hand, playerNames: string[], playerIndex: number)
     return assignment;
 }
 
+/**
+ * @param hand The hand contains the treasure cards
+ * @param playerNames Array of player names
+ * @param playerIndex The index of this AI in the array of player names
+ * @returns A map from player names to the cards they will hold
+ * It is guaranteed that each player name (that is not the AI) will have a not-null card assigned to them
+ */
+function distributeCards(hand: Hand, playerNames: string[], playerIndex: number): {[key: string]: Card} {
+    const playerName = playerNames[playerIndex];
+    const otherPlayerNames = playerNames.filter((name: string, i: number) => {
+        return i !== playerIndex;
+    });
+
+    if (otherPlayerNames.length !== 2) {
+        throw new Error('there must be exactly 2 other players');
+    }
+
+    // TODO this is a very primitive method
+    // since there are not that many possible cards to distribute, we just go over all possible cards that we might give away
+    // then evaluate the hand afterwards
+    // we can use the insight that we will never give away an ace (when we have fewer than 2 marriages) to speed up the calculation
+    // NOTE: there are some rare instances when we may want to give away an ace
+    // for example: {Hearts: [A, 10, K, Q], Diamonds: [A, 10, K, Q], Spades: [A, 9]}
+    // in this case we would want to give away the Ace of Spades
+    // however in 99% of cases we would not want to go down that road
+
+    const bestAssignment = {} as { [key: string]: Card };
+    let bestAssignmentValue = -1;
+
+    for (let i = 0; i < hand.cards.length; i++) {
+        for (let j = i + 1; j < hand.cards.length; j++) {
+            const cardA = hand.cards[i];
+            const cardB = hand.cards[j];
+            const newCards = [...hand.cards];
+            // important: splice j before i since i is greater
+            newCards.splice(j, 1);
+            newCards.splice(i, 1);
+            const newHand = new Hand(newCards);
+            const numMarriages = newHand.marriages.length;
+
+            if (numMarriages < 2 && (cardA.value === CardValue.ACE || cardB.value === CardValue.ACE)) {
+                continue;
+            }
+
+            let v = _evaluateHand(newHand);
+            if (v > bestAssignmentValue) {
+                bestAssignment[otherPlayerNames[0]] = cardA;
+                bestAssignment[otherPlayerNames[1]] = cardB;
+                bestAssignmentValue = v;
+            }
+        }
+    }
+
+    console.debug(`[AI] Best assignment gives ${playerName} an estimated ${bestAssignmentValue} points`);
+
+    return bestAssignment;
+}
+
 export default {
     getBid,
-    getCard,
+    playCard: playCard,
     reevalContract,
     distributeCards,
 };

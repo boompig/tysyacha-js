@@ -32,7 +32,7 @@ interface IProps {
     /**
      * Callback for when a card is played
      */
-    onPlayCard(playerIndex: number, cardIndex: number): void;
+    onPlayCard(trickCard: ITrickCard): void;
     /**
       * Once a trick is complete, it is shown to the player
       * This button dismisses the trick
@@ -40,8 +40,37 @@ interface IProps {
     onDimissTrick(): void;
 };
 
+/**
+ * NOTE: the hand *must* include the played card (obviously)
+ * Otherwise we get nonsense
+ * @param hand Hand *before* this card is played (includes this card)
+ * @param cardIndex Index into hand.cards
+ * @param currentTrick The current trick *excluding* the current card
+ * @param numPastTricks The number of tricks that have already been taken (by all players, total)
+ */
+function doesPlayedCardDeclareMarriage (hand: Hand, cardIndex: number, currentTrick: ITrickCard[], numPastTricks: number) {
+    if (cardIndex < 0 || cardIndex >= hand.cards.length) {
+        throw new Error(`cardIndex is invalid - ${cardIndex}`);
+    }
+    const card = hand.cards[cardIndex];
+
+    if (currentTrick.length === 0 && (card.value === CardValue.KING || card.value === CardValue.QUEEN) &&
+        numPastTricks > 0) {
+        // check to see if they have the other card
+        if (hand.marriages.includes(card.suit)) {
+            // console.log(`[trick ${this.state.trickNumber}] ${playerName} declared a ${card.suit} marriage`);
+            return true;
+        }
+    }
+    return false;
+}
+
 const TrickTakingView: FC<IProps> = (props: IProps) => {
     let [isInstructionsShown, setInstructionsShown] = useState(true);
+
+    /**
+     * This is an index into the local player's hand.cards
+     */
     let [selectedCard, selectCard] = useState(-1);
 
     /**
@@ -63,20 +92,34 @@ const TrickTakingView: FC<IProps> = (props: IProps) => {
             throw new Error('no selected card');
         }
 
-        props.onPlayCard(props.activePlayerIndex, selectedCard);
+        const activePlayerName = props.playerNames[props.activePlayerIndex];
+        const activePlayerHand = props.playerHands[activePlayerName];
+        const trickCard = {
+            player: activePlayerName,
+            card: activePlayerHand.cards[selectedCard],
+            isMarriage: doesPlayedCardDeclareMarriage(activePlayerHand, selectedCard, props.currentTrick, props.numPastTricks),
+        } as ITrickCard;
+
+        props.onPlayCard(trickCard);
 
         // de-select this card
         selectCard(-1);
     }
 
     function handleAITurn() {
-        const playerName = props.playerNames[props.activePlayerIndex];
-        const hand = props.playerHands[playerName];
-        const cardIndex = AI.getCard(hand, props.currentTrick, props.tricksTaken, props.trumpSuit, playerName);
-        if (cardIndex < 0 || cardIndex >= hand.cards.length) {
-            throw new Error(`AI ${playerName} returned cardIndex ${cardIndex} which is invalid`);
+        const activePlayerName = props.playerNames[props.activePlayerIndex];
+        const activePlayerHand = props.playerHands[activePlayerName];
+        const cardIndex = AI.playCard(activePlayerHand, props.currentTrick, props.tricksTaken, props.trumpSuit, activePlayerName);
+        if (cardIndex < 0 || cardIndex >= activePlayerHand.cards.length) {
+            throw new Error(`AI ${activePlayerName} returned cardIndex ${cardIndex} which is invalid`);
         }
-        props.onPlayCard(props.activePlayerIndex, cardIndex);
+        const trickCard = {
+            player: activePlayerName,
+            card: activePlayerHand.cards[cardIndex],
+            isMarriage: doesPlayedCardDeclareMarriage(activePlayerHand, cardIndex, props.currentTrick, props.numPastTricks),
+        }
+
+        props.onPlayCard(trickCard);
     }
 
     const localPlayerName = props.playerNames[props.localPlayerIndex];
@@ -188,4 +231,5 @@ const TrickTakingView: FC<IProps> = (props: IProps) => {
 
 export {
     TrickTakingView,
+    doesPlayedCardDeclareMarriage,
 };

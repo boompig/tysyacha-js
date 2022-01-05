@@ -24,6 +24,9 @@ interface IRevealTreasureViewProps {
 /**
  * The treasure has just been revealed!
  * The contract player may now increase their contract
+ *
+ * We show the treasure to everyone
+ * But be careful to only show the human player's cards to them
  */
 const RevealTreasureView : FC<IRevealTreasureViewProps> = (props: IRevealTreasureViewProps) => {
     const contractPlayerName = props.playerNames[props.contractPlayerIndex];
@@ -68,10 +71,13 @@ const RevealTreasureView : FC<IRevealTreasureViewProps> = (props: IRevealTreasur
      * Let the AI think
      */
     function handleAITurn() {
+        const name = props.playerNames[props.contractPlayerIndex];
         const newPoints = AI.reevalContract(
-            props.playerHands[props.contractPlayerIndex],
+            props.playerHands[name],
             props.treasure,
-            props.contractPoints
+            props.contractPoints,
+            props.playerNames,
+            props.contractPlayerIndex
         );
         if (newPoints < props.contractPoints) {
             throw new Error('AI returned a lower contract than the one it started with');
@@ -105,11 +111,12 @@ const RevealTreasureView : FC<IRevealTreasureViewProps> = (props: IRevealTreasur
 
     const humanPlayerName = props.playerNames[props.localPlayerIndex];
 
+    // show the *human player*'s cards, not that of the contract player
     const playerView = (<div>
             <PlayerView
                 name={humanPlayerName}
                 playerIndex={props.localPlayerIndex}
-                hand={props.playerHands[contractPlayerName]}
+                hand={props.playerHands[humanPlayerName]}
                 phase={GamePhase.BIDDING}
                 isDealer={props.localPlayerIndex === props.dealerIndex}
                 tricksTaken={[]}
@@ -127,7 +134,8 @@ const RevealTreasureView : FC<IRevealTreasureViewProps> = (props: IRevealTreasur
             You may now increase your contract if you wish.</p>);
     } else {
         instructions = (<p>
-            Unfortunately you did not win the bidding. { contractPlayerName } won the bidding instead.
+            Unfortunately you did not win the bidding.&nbsp;
+            { contractPlayerName } won the bidding instead and currently holds a contract for { props.contractPoints} points.
             In any case, each player sees the previously hidden treasure cards.&nbsp;
             { contractPlayerName } may now choose to increase the contract or keep it the same.
         </p>);

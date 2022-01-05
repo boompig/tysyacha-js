@@ -37,14 +37,18 @@ export function getSuits(): Suit[] {
     return [Suit.HEARTS, Suit.CLUBS, Suit.DIAMONDS, Suit.SPADES];
 }
 
-function getCardValues(): CardValue[] {
+/**
+ * Return all of the possible card values
+ * These are guaranteed to be in order from highest to lowest
+ */
+export function getCardValues(): CardValue[] {
     return [
-        CardValue.NINE,
-        CardValue.JACK,
-        CardValue.QUEEN,
-        CardValue.KING,
+        CardValue.ACE,
         CardValue.TEN,
-        CardValue.ACE
+        CardValue.KING,
+        CardValue.QUEEN,
+        CardValue.JACK,
+        CardValue.NINE,
     ];
 }
 
@@ -133,13 +137,24 @@ export class Hand {
         this.marriages = this._findMarriages();
     }
 
-    hasCard(needle: ICard): boolean {
-        for(const card of this.cards) {
-            if(card.suit === needle.suit && card.value === needle.value) {
-                return true;
+    /**
+     * Return the index of the given card in `hand.cards`
+     * Useful when we can't call `hand.cards.indexOf(card)`
+     * @param needle - description of the card rather than a card object
+     * @returns index into `hand.cards` if found, -1 otherwise
+     */
+    findCard(needle: ICard): number {
+        for (let i = 0; i < this.cards.length; i++) {
+            let card = this.cards[i];
+            if (card.suit === needle.suit && card.value === needle.value) {
+                return i;
             }
         }
-        return false;
+        return -1;
+    }
+
+    hasCard(needle: ICard): boolean {
+        return this.findCard(needle) !== -1;
     }
 
     _sortCardsBySuit(cards: Card[]): CardsBySuit {

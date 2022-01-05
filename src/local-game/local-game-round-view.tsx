@@ -6,7 +6,7 @@ import { Bid, GamePhase, getWinningCard, ITrickCard } from "../game-mechanics";
 import { RoundScoringView } from "../local-components/round-scoring-view";
 import { BiddingView } from "./bidding-view";
 import { RevealTreasureView } from "./reveal-treasure-view";
-import { TrickTakingView } from "./trick-taking-view";
+import { doesPlayedCardDeclareMarriage, TrickTakingView } from "./trick-taking-view";
 import { TableView } from "./table-view";
 
 interface ITestRoundProps {
@@ -246,7 +246,8 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
      * A given player plays the given card (on their turn)
      * NOTE: no sanity checking here
      */
-    handlePlayCard(playerIndex: number, cardIndex: number) {
+    handlePlayCard(trickCard: ITrickCard) {
+        const playerIndex = this.props.playerNames.indexOf(trickCard.player);
         if (playerIndex !== this.state.activePlayerIndex) {
             throw new Error('can only call this method to play a card by the active player');
         }
@@ -255,29 +256,26 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
             throw new Error('cannot play additional cards after the current trick has 3 or more cards');
         }
 
+        const cardIndex = this.state.playerHands[trickCard.player].findCard(trickCard.card);
+        if (cardIndex === -1) {
+            throw new Error(`cannot find card ${trickCard.card} in player ${trickCard.player}'s hand`);
+        }
+
         const playerName = this.props.playerNames[playerIndex];
         const card = this.state.playerHands[playerName].cards[cardIndex];
         console.log(`[trick ${this.state.trickNumber}] ${playerName} -> card ${card}`);
-        let isMarriage = false;
 
-        // add card to the current trick
-        const currentTrick = this.state.currentTrick.slice();
-        currentTrick.push({
-            card: card,
-            player: playerName,
-        });
-
-        // a little trick here - if the card played is part of a marriage, the marriage is auto-declared
-        // NOTE: use *previous* hand here, not the new hand
-        if(currentTrick.length === 1 && (card.value === CardValue.KING || card.value === CardValue.QUEEN) &&
-            this.state.tricksTaken[playerName].length > 0) {
-            // check to see if they have the other card
-            const hand = this.state.playerHands[playerName];
-            if(hand.marriages.includes(card.suit)) {
-                console.log(`[trick ${this.state.trickNumber}] ${playerName} declared a ${card.suit} marriage`);
-                isMarriage = true;
-            }
+        const activePlayerHand = this.state.playerHands[playerName];
+        const isMarriage = doesPlayedCardDeclareMarriage(activePlayerHand, cardIndex, this.state.currentTrick, this.state.trickNumber);
+        if (!isMarriage && trickCard.isMarriage) {
+            throw new Error('player is telling us this is a marriage but we are not seeing it');
+        } else if (isMarriage) {
+            console.debug(`${playerName} declared a marriage -> ${card.suit}`);
         }
+
+        // add card to the current trick - after marriage check
+        const currentTrick = this.state.currentTrick.slice();
+        currentTrick.push(trickCard);
 
         // remove card from player hand
         const newCards = this.state.playerHands[playerName].cards.slice();

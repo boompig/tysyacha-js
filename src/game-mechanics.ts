@@ -68,8 +68,15 @@ export type Bid = {
 }
 
 export interface ITrickCard {
+    /**
+     * Name of the player
+     */
     player: string;
     card: ICard;
+    /**
+     * When specified and true, whether this card represents a declared marriage
+     */
+    isMarriage?: boolean;
 }
 
 export interface IPastTrick {
