@@ -486,6 +486,10 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
         });
     }
 
+    /**
+     * Called at the end of the bidding phase
+     * @param winningBid Null if everyone passes
+     */
     handleCompleteBidding(winningBid: Bid | null): void {
         console.log('bidding is complete');
         if(winningBid) {
@@ -500,6 +504,7 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
             });
         } else {
             this.props.onRoundOver({}, true);
+            this.resetRound();
         }
     }
 

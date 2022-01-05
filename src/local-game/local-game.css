@@ -70,6 +70,12 @@
     padding-top: 1.5rem;
 }
 
+@media screen and (max-height: 850px) {
+    .bidding-view .round-info {
+        padding-top: 1rem;
+    }
+}
+
 .bidding-view .round-info p {
     margin: 0;
     padding: 0;

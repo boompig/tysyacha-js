@@ -21,7 +21,15 @@ interface IBiddingViewProps {
      */
     dealerIndex: number;
 
-    playerHands: {[key: string]: Hand}
+    /**
+     * Map from player names to their hands
+     */
+    playerHands: {[key: string]: Hand};
+
+    /**
+     * Call this when the bidding phase is done
+     * Winning bid is null when everyone passes
+     */
     onNextPhase(winningBid: Bid | null): any;
 }
 
