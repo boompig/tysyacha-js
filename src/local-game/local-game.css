@@ -13,6 +13,21 @@
     font-size: 1.2rem;
 }
 
+.dealing-view .instructions {
+    width: 600px;
+    padding-top: 1rem;
+    text-align: center;
+    margin: 0 auto;
+    font-size: 1.1rem;
+}
+
+.dealing-view .action-container {
+    width: 600px;
+    padding-top: 1rem;
+    text-align: center;
+    margin: 0 auto;
+}
+
 @media screen and (min-width: 900px) {
     .table-view {
         min-height: 10rem;

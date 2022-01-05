@@ -13,6 +13,9 @@ interface ITableViewProps {
     activePlayerIndex: number;
 }
 
+/**
+ * Show a version of a card table with the players' positions at it
+ */
 export const TableView : FC<ITableViewProps> = (props: ITableViewProps) => {
     const playerOrder = props.playerNames.map((name: string, i: number) => {
         const classes = ['player-name'];

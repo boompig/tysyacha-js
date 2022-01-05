@@ -9,6 +9,7 @@ import { RoundScoringView } from "../local-components/round-scoring-view";
 import { BiddingView } from "./bidding-view";
 import { RevealTreasureView } from "./reveal-treasure-view";
 import { TrickTakingView } from "./trick-taking-view";
+import { TableView } from "./table-view";
 
 interface ITestRoundProps {
     gameId: string;
@@ -533,10 +534,16 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
 
         switch(this.state.phase) {
             case GamePhase.NOT_DEALT: {
-                return <div>
-                    <div>{ this.props.playerNames[this.props.dealerIndex] } is dealing</div>
-                    <button type="button" className="btn btn-success btn-lg"
-                        onClick={this.dealCards}>Deal</button>
+                return <div className="dealing-view">
+                    <TableView
+                        playerNames={this.props.playerNames}
+                        localPlayerIndex={this.props.localPlayerIndex}
+                        activePlayerIndex={this.props.dealerIndex} />
+                    <div className="instructions">{ this.props.playerNames[this.props.dealerIndex] } is dealing</div>
+                    <div className="action-container">
+                        <button type="button" className="btn btn-success btn-lg"
+                            onClick={this.dealCards}>Deal</button>
+                    </div>
                 </div>;
             }
             case GamePhase.BIDDING: {
