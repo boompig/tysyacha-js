@@ -94,25 +94,33 @@ export function isMarriagePlayed(card: Card, hand: Hand, totalTricks: number, is
     return false;
 }
 
-export function getWinningCard(cards: ITrickCard[], marriage: null | Suit): ITrickCard {
-    if (cards.length !== 3) {
-        throw new Error(`There must only be 3 cards in the current trick, found ${cards.length}`);
+/**
+ * Return the winning card in this trick. Unlike the safe version, makes no assumptions about whether the trick has 3 cards (but must not be empty).
+ * This is useful for an AI to call.
+ * @param cards The cards in the trick. May not be an empty array.
+ * @param trumpSuit The current trump suit
+ * @returns The card in the trick that wins
+ */
+export function UNSAFE_getWinningCard(cards: ITrickCard[], trumpSuit: null | Suit): ITrickCard {
+    if (cards.length === 0) {
+        throw new Error('current trick may not be empty');
     }
+
     let winningP = cards[0].player;
     let bestCard = cards[0].card;
 
-    for(const tc of cards) {
+    for (const tc of cards) {
         let isBetter = false;
-        if (marriage && tc.card.suit === marriage) {
+        if (trumpSuit && tc.card.suit === trumpSuit) {
             // this player played a trump
-            if (bestCard.suit === marriage) {
+            if (bestCard.suit === trumpSuit) {
                 isBetter = tc.card.value > bestCard.value;
             } else {
                 isBetter = true
             }
-        } else if(tc.card.suit === cards[0].card.suit) {
+        } else if (tc.card.suit === cards[0].card.suit) {
             // this player played in the "correct" suit
-            if(marriage && bestCard.suit === marriage) {
+            if (trumpSuit && bestCard.suit === trumpSuit) {
                 // tough luck - someone else played a trump
                 isBetter = false;
             } else {
@@ -134,6 +142,19 @@ export function getWinningCard(cards: ITrickCard[], marriage: null | Suit): ITri
         player: winningP,
         card: bestCard,
     };
+}
+
+/**
+ * Return the winning card in this trick. The trick *must* have 3 cards.
+ * @param cards The cards in the trick
+ * @param trumpSuit The current trump suit
+ * @returns The card in the trick that wins
+ */
+export function getWinningCard(cards: ITrickCard[], trumpSuit: null | Suit): ITrickCard {
+    if (cards.length !== 3) {
+        throw new Error(`There must only be 3 cards in the current trick, found ${cards.length}`);
+    }
+    return UNSAFE_getWinningCard(cards, trumpSuit);
 }
 
 /**

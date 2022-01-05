@@ -116,6 +116,7 @@ export class Hand {
     /**
      * Cards sorted according to their suit
      * Guaranteed to be ordered with highest value first
+     * Each suit will exist (but may be an empty array)
      */
     cardsBySuit: CardsBySuit;
 

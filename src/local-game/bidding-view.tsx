@@ -132,7 +132,7 @@ export const BiddingView : FC<IBiddingViewProps> = (props: IBiddingViewProps) =>
             return;
         } else if (points === 0) {
             setPointsErrorMsg("cannot bid 0");
-        } else if (points % 5 != 0) {
+        } else if (points % 5 !== 0) {
             setPointsErrorMsg("points can only be moved in increments of 5");
             return;
         } else if (points < MIN_BID_POINTS) {

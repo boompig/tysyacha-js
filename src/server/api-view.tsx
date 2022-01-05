@@ -3,7 +3,6 @@ import API, { IRoundInfo, IGameInfo, IPlayingPhaseInfo } from '../api';
 import { GamePhase, ITrickCard, IPastTrick } from '../game-mechanics';
 import { DistributeCardsView } from './distribute-cards-view';
 import { Hand, Card, CardValue } from '../cards';
-import { CardView } from '../local-components/card-view';
 import { PlayerView } from '../local-components/player-view';
 
 interface IProps {

@@ -72,7 +72,10 @@ const TrickTakingView: FC<IProps> = (props: IProps) => {
     function handleAITurn() {
         const playerName = props.playerNames[props.activePlayerIndex];
         const hand = props.playerHands[playerName];
-        const cardIndex = AI.getCard(hand, props.currentTrick);
+        const cardIndex = AI.getCard(hand, props.currentTrick, props.tricksTaken, props.trumpSuit, playerName);
+        if (cardIndex < 0 || cardIndex >= hand.cards.length) {
+            throw new Error(`AI ${playerName} returned cardIndex ${cardIndex} which is invalid`);
+        }
         props.onPlayCard(props.activePlayerIndex, cardIndex);
     }
 
