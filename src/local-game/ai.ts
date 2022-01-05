@@ -128,7 +128,110 @@ function _playRandomCard(hand: Hand, currentTrick: ITrickCard[], trumpSuit: Suit
     const i = randInt(0, possibleCards.length);
     const card = possibleCards[i];
     const j = hand.cards.indexOf(card);
+    if (j === -1) {
+        throw new Error('bug in playRandomCard');
+    }
     return j;
+}
+
+/**
+ * Return what card to play as the *first* card in a trick
+ */
+function _playLeadingCard(hand: Hand, tricksTaken: {[key: string]: ITrickCard[][]}, trumpSuit: Suit | null, playerName: string): number {
+    const hasTakenTrick = tricksTaken[playerName].length > 0;
+    if (hasTakenTrick && hand.marriages.length > 0) {
+        // play our marriage
+        const bestMarriageSuit = _getBestMarriageSuit(hand);
+        if (!bestMarriageSuit) {
+            throw new Error('best marriage suit cannot be null if hand has marriages');
+        }
+        // always play the queen
+        return hand.findCard({
+            value: CardValue.QUEEN,
+            suit: bestMarriageSuit,
+        });
+    } else {
+        const hasAce = _hasAce(hand);
+        if (hasAce) {
+            // play the ace
+            return _findCardValue(hand, CardValue.ACE);
+        } else {
+            return _playRandomCard(hand, [], trumpSuit);
+        }
+    }
+}
+
+/**
+ * Return what card to play as any card other than the first card in a trick
+ */
+function _playFollowingCard(hand: Hand, currentTrick: ITrickCard[], tricksTaken: {[key: string]: ITrickCard[][]}, trumpSuit: Suit | null, playerName: string): number {
+    const leadingSuit = currentTrick[0].card.suit;
+    const winningCard = UNSAFE_getWinningCard(currentTrick, trumpSuit).card;
+
+    if (hand.cardsBySuit[leadingSuit].length > 0) {
+        // we have this suit
+
+        // since cardsBySuit ordered by value, this is the highest card
+        // not empty in this block
+        const ourBestCard = hand.cardsBySuit[leadingSuit][0];
+        let cbsIndex = 0;
+
+        if (winningCard.suit !== leadingSuit || ourBestCard.value < winningCard.value) {
+            // we are going to lose this trick. put down our lowest card.
+            cbsIndex = hand.cardsBySuit[leadingSuit].length - 1;
+        } else {
+            // we are winning this trick. put down our best card.
+            cbsIndex = 0;
+        }
+        const ourCard = hand.cardsBySuit[leadingSuit][cbsIndex];
+        const i =  hand.cards.indexOf(ourCard);
+        if (i < 0) {
+            throw new Error('AI error in leading suit logic');
+        }
+        return i;
+    } else if (trumpSuit && hand.cardsBySuit[trumpSuit].length > 0) {
+        // we don't have the leading suit but we have a trump
+        // we *do not* go into this block if the leading card was a trump
+
+        let cbsIndex = 0;
+        if (winningCard.suit === leadingSuit || winningCard.suit !== trumpSuit) {
+            // no one else has placed a trump card
+            // play our lowest trump
+            cbsIndex = hand.cardsBySuit[trumpSuit].length - 1;
+        } else {
+            // someone else has already placed a trump card
+            const ourBestCard = hand.cardsBySuit[trumpSuit][0];
+            if (ourBestCard.value > winningCard.value) {
+                // play our highest trump to beat it
+                cbsIndex = 0;
+            } else {
+                // our highest trump cannot beat it, so play our lowest trump
+                cbsIndex = hand.cardsBySuit[trumpSuit].length - 1;
+            }
+        }
+        const ourCard = hand.cardsBySuit[trumpSuit][cbsIndex];
+        const i = hand.cards.indexOf(ourCard);
+        if (i < 0) {
+            throw new Error('AI error in trump suit logic');
+        }
+        return i;
+    } else {
+        // we don't have the leading suit or a trump
+        // we will throw away our lowest remaining card
+        let lowestV = 1000;
+        let lowestCard = hand.cards[0];
+        for (let card of hand.cards) {
+            if (card.value < lowestV) {
+                lowestCard = card;
+                lowestV = card.value;
+            }
+        }
+        const i = hand.cards.indexOf(lowestCard);
+        if (i < 0) {
+            throw new Error('AI error in fall-through suit logic');
+        }
+        return i;
+    }
 }
 
 /**
@@ -149,86 +252,17 @@ function playCard(hand: Hand, currentTrick: ITrickCard[], tricksTaken: {[key: st
     // right now it's not very sophisticated
     // if this is not our trick, sacrifice the lowest-value card in that suit
     if (currentTrick.length === 0) {
-        // our trick
-
-        const hasTakenTrick = tricksTaken[playerName].length > 0;
-        if (hasTakenTrick && hand.marriages.length > 0) {
-            // play our marriage
-            const bestMarriageSuit = _getBestMarriageSuit(hand);
-            if (!bestMarriageSuit) {
-                throw new Error('best marriage suit cannot be null if hand has marriages');
-            }
-            // always play the queen
-            return hand.findCard({
-                value: CardValue.QUEEN,
-                suit: bestMarriageSuit,
-            });
-        } else {
-            const hasAce = _hasAce(hand);
-            if (hasAce) {
-                // play the ace
-                return _findCardValue(hand, CardValue.ACE);
-            } else {
-                return _playRandomCard(hand, currentTrick, trumpSuit);
-            }
+        const cardIndex = _playLeadingCard(hand, tricksTaken, trumpSuit, playerName);
+        if (cardIndex === -1) {
+            throw new Error(`[AI] bug in playLeadingCard for AI ${playerName} - returned -1`);
         }
+        return cardIndex;
     } else {
-        const leadingSuit = currentTrick[0].card.suit;
-        const winningCard = UNSAFE_getWinningCard(currentTrick, trumpSuit).card;
-
-        // someone else's trick
-        if (hand.cardsBySuit[leadingSuit].length > 0) {
-            // we have this suit
-
-            // since cardsBySuit ordered by value, this is the highest card
-            // not empty in this block
-            const ourBestCard = hand.cardsBySuit[leadingSuit][0];
-            let cbsIndex = 0;
-
-            if (winningCard.suit !== leadingSuit || ourBestCard.value < winningCard.value) {
-                // we are going to lose this trick. put down our lowest card.
-                cbsIndex = hand.cardsBySuit[leadingSuit].length - 1;
-            } else {
-                // we are winning this trick. put down our best card.
-                cbsIndex = 0;
-            }
-            const ourCard = hand.cardsBySuit[leadingSuit][cbsIndex];
-            return hand.cards.indexOf(ourCard);
-        } else if (trumpSuit && hand.cardsBySuit[trumpSuit].length > 0) {
-            // we don't have the leading suit but we have a trump
-            // we *do not* go into this block if the leading card was a trump
-
-            let cbsIndex = 0;
-            if (winningCard.suit === leadingSuit || winningCard.suit !== trumpSuit) {
-                // no one else has placed a trump card
-                // play our lowest trump
-                cbsIndex = hand.cardsBySuit[trumpSuit].length - 1;
-            } else {
-                // someone else has already placed a trump card
-                const ourBestCard = hand.cardsBySuit[trumpSuit][0];
-                if (ourBestCard.value > winningCard.value) {
-                    // play our highest trump to beat it
-                    cbsIndex = 0;
-                } else {
-                    // our highest trump cannot beat it, so play our lowest trump
-                    cbsIndex = hand.cardsBySuit[trumpSuit].length - 1;
-                }
-            }
-            const ourCard = hand.cardsBySuit[leadingSuit][cbsIndex];
-            return hand.cards.indexOf(ourCard);
-        } else {
-            // we don't have the leading suit or a trump
-            // we will throw away our lowest remaining card
-            let lowestV = 1000;
-            let lowestCard = hand.cards[0];
-            for (let card of hand.cards) {
-                if (card.value < lowestV) {
-                    lowestCard = card;
-                    lowestV = card.value;
-                }
-            }
-            return hand.cards.indexOf(lowestCard);
+        const cardIndex = _playFollowingCard(hand, currentTrick, tricksTaken, trumpSuit, playerName);
+        if (cardIndex === -1) {
+            throw new Error(`[AI] bug in playFollowingCard for AI ${playerName} - returned -1`);
         }
+        return cardIndex;
     }
 }
 

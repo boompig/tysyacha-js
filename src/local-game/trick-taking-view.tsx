@@ -185,6 +185,10 @@ const TrickTakingView: FC<IProps> = (props: IProps) => {
 
         <div className="current-trick-wrapper">
             { props.currentTrick.length > 0 ? <h2>Current Trick</h2> : null }
+            { props.currentTrick.length > 0 && props.currentTrick[0].isMarriage ?
+                <p>{ props.currentTrick[0].player } declared a { props.currentTrick[0].card.suit } marriage</p> :
+                null
+            }
             <div className="current-trick-container">
                 { currentTrickCards }
             </div>
