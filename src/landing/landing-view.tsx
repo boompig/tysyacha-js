@@ -63,6 +63,9 @@ const LandingView : FC <IProps> = (props: IProps) => {
         const playerName = (e.target as any).playerName.value;
         url.searchParams.set('playerName', playerName);
 
+        // set the language
+        url.searchParams.set('lang', lang);
+
         window.location.href = url.toString();
         return false;
     }

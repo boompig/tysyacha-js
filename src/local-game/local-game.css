@@ -2,7 +2,7 @@
  * Styling for the local game only
  */
 
-.bidding-view .player-order {
+.table-view {
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
@@ -14,23 +14,23 @@
 }
 
 @media screen and (min-width: 900px) {
-    .bidding-view .player-order {
+    .table-view {
         min-height: 10rem;
         max-width: 650px;
         padding: 1rem;
         border: 1px solid black;
         border-radius: 5px;
     }
-    .bidding-view .player-order .player-name {
+    .table-view .player-name {
         font-size: 1.1rem;
         padding-bottom: 0;
     }
-    .bidding-view .player-order .player-name:first-of-type {
+    .table-view .player-name:first-of-type {
         position: relative;
         top: 6rem;
         left: 0rem;
     }
-    .bidding-view .player-order .player-name:last-of-type {
+    .table-view .player-name:last-of-type {
         position: relative;
         top: 6rem;
         right: 4rem;

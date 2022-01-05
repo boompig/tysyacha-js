@@ -4,6 +4,7 @@ import { Bid, GamePhase, getWinningBid, isBiddingComplete, MIN_BID_POINTS } from
 import AI from "./ai";
 import {PlayerView} from "../local-components/player-view";
 import { BidHistoryView } from "./bid-history-view";
+import { TableView } from "./table-view";
 
 interface IBiddingViewProps {
     /**
@@ -174,30 +175,11 @@ export const BiddingView : FC<IBiddingViewProps> = (props: IBiddingViewProps) =>
             <div>Marriages: { hand.marriages.length > 0 ? hand.marriages.join(" ") : "none" }</div>
         </div>);
 
-    const playerOrder = props.playerNames.map((name: string, i: number) => {
-        const classes = ['player-name'];
-        if (i === props.localPlayerIndex) {
-            classes.push('local-player');
-        }
-        if (i === biddingPlayerIndex) {
-            classes.push('active-player');
-        }
-        return <div className={ classes.join(' ')} key={ `player-${i}` }>
-            <span>{name}</span>
-            {props.localPlayerIndex !== i ?
-                <span>&nbsp;(AI)</span> :
-                null
-            }
-            {props.localPlayerIndex === i ?
-                <span>*</span> :
-                null}
-        </div>
-    });
-
     return <div className="bidding-view">
-        <div className="player-order">
-            {playerOrder}
-        </div>
+        <TableView
+            playerNames={props.playerNames}
+            localPlayerIndex={props.localPlayerIndex}
+            activePlayerIndex={biddingPlayerIndex} />
 
         <div className="round-info">
             <p>
