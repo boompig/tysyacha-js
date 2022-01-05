@@ -3,6 +3,7 @@ import { Card, Hand } from "../cards";
 import { CardView } from "../local-components/card-view";
 import { PlayerView } from "../local-components/player-view";
 import { GamePhase } from "../game-mechanics";
+import AI from "./ai";
 
 interface IRevealTreasureViewProps {
     playerNames: string[];
@@ -27,8 +28,16 @@ interface IRevealTreasureViewProps {
 const RevealTreasureView : FC<IRevealTreasureViewProps> = (props: IRevealTreasureViewProps) => {
     const contractPlayerName = props.playerNames[props.contractPlayerIndex];
 
+    /**
+     * New contract points
+     */
     let [points, setPoints] = useState(0);
     let [errorMsg, setErrorMsg] = useState("");
+    /**
+     * We only use this variable if the AI holds the contract
+     * True iff the AI has thought about their action (filled `points` variable)
+     */
+    let [haveAITurn, setAITurn] = useState(false);
 
     function handleChangeContract(e: React.SyntheticEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -47,10 +56,40 @@ const RevealTreasureView : FC<IRevealTreasureViewProps> = (props: IRevealTreasur
         props.onFinalizeContract(props.contractPoints);
     }
 
+    /**
+     * Change the contract points
+     */
     function handleChangePoints(e: React.SyntheticEvent<HTMLInputElement>) {
         const v = Number.parseInt((e.target as HTMLInputElement).value);
         setPoints(v);
     }
+
+    /**
+     * Let the AI think
+     */
+    function handleAITurn() {
+        const newPoints = AI.reevalContract(
+            props.playerHands[props.contractPlayerIndex],
+            props.treasure,
+            props.contractPoints
+        );
+        if (newPoints < props.contractPoints) {
+            throw new Error('AI returned a lower contract than the one it started with');
+        }
+        setPoints(newPoints);
+        setAITurn(true);
+    }
+
+    /**
+     * Once the AI has decided on a contract amount, submit that amount back to caller
+     */
+    function handleSubmitAIPoints() {
+        if (!haveAITurn) {
+            throw new Error('AI must think first');
+        }
+        props.onFinalizeContract(points);
+    }
+
 
     const treasureCards = props.treasure.map((card: Card, i: number) => {
         let targetPlayer = null;
@@ -86,6 +125,12 @@ const RevealTreasureView : FC<IRevealTreasureViewProps> = (props: IRevealTreasur
         instructions = (<p>Congratulations! You won the contract for { props.contractPoints } points.
             I hope you like the treasure.
             You may now increase your contract if you wish.</p>);
+    } else {
+        instructions = (<p>
+            Unfortunately you did not win the bidding. { contractPlayerName } won the bidding instead.
+            In any case, each player sees the previously hidden treasure cards.
+            { contractPlayerName } may now choose to increase the contract or keep it the same.
+        </p>);
     }
 
     return (<div className="container reveal-treasure-view">
@@ -101,19 +146,42 @@ const RevealTreasureView : FC<IRevealTreasureViewProps> = (props: IRevealTreasur
 
             {instructions}
 
-            <form onSubmit={handleChangeContract}>
-                <input type="number" className="form-control" name="points"
-                    min={props.contractPoints} max={400} step={5}
-                    placeholder="please enter your new contract points"
-                    onChange={handleChangePoints} />
-                { errorMsg ? <div className="error-msg">{ errorMsg }</div> : null }
-                <div className="btn-group">
-                    <button type="submit" className="btn btn-success btn-lg"
-                        disabled={points < props.contractPoints}>Increase Contract</button>
-                    <button type="submit" className="btn btn-danger btn-lg"
-                        onClick={handleKeepCurrentContract}>Keep Current Contract</button>
+            { props.localPlayerIndex === props.contractPlayerIndex ?
+                <form onSubmit={handleChangeContract}>
+                    <input type="number" className="form-control" name="points"
+                        min={props.contractPoints} max={400} step={5}
+                        placeholder="please enter your new contract points"
+                        onChange={handleChangePoints} />
+                    { errorMsg ? <div className="error-msg">{ errorMsg }</div> : null }
+                    <div className="btn-group">
+                        <button type="submit" className="btn btn-success btn-lg"
+                            disabled={points < props.contractPoints}>Increase Contract</button>
+                        <button type="submit" className="btn btn-danger btn-lg"
+                            onClick={handleKeepCurrentContract}>Keep Current Contract</button>
+                    </div>
+                </form>:
+                <div>
+                    { haveAITurn ? null :
+                        <button type="button" className="btn btn-info btn-lg"
+                            onClick={handleAITurn}>Evaluate AI Turn</button>
+                    }
+
+                    { haveAITurn ?
+                        <div>{
+                            points === props.contractPoints ?
+                            `${contractPlayerName} has decided to keep the contract unchanged.` :
+                            `${contractPlayerName} has decided to increase the contract to ${points} points.`
+                        }
+                        </div> : null
+                    }
+
+                    { haveAITurn ?
+                        <button type="button" className="btn btn-success btn-lg"
+                            onClick={handleSubmitAIPoints}>Continue</button> :
+                        null
+                    }
                 </div>
-            </form>
+            }
         </div>
     </div>);
 };

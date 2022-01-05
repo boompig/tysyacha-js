@@ -72,7 +72,18 @@ function getCard(playerHand: Hand, currentTrick: ITrickCard[]): number {
     return j;
 }
 
+/**
+ * This AI holds the contract
+ * Re-evaluate what we want to bid in the fact of the newly revealed treasure cards
+ * The number returned is *guaranteed* to be >= `currentContract`
+ */
+function reevalContract(hand: Hand, treasureCards: Card[], currentContract: number): number {
+    // TODO for now always keep it the same
+    return currentContract;
+}
+
 export default {
     getBid,
     getCard,
+    reevalContract,
 };

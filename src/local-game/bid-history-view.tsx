@@ -11,6 +11,10 @@ interface IProps {
     bidHistory: Bid[];
 };
 
+/**
+ * This is a sub-view of BiddingView
+ * Shows the bids by all the players
+ */
 const BidHistoryView : FC<IProps> = (props: IProps) => {
     function bidTableCell(bid: Bid, index: number): JSX.Element {
         return <td key={`bid-${index}`}>
