@@ -128,7 +128,7 @@ const RevealTreasureView : FC<IRevealTreasureViewProps> = (props: IRevealTreasur
     } else {
         instructions = (<p>
             Unfortunately you did not win the bidding. { contractPlayerName } won the bidding instead.
-            In any case, each player sees the previously hidden treasure cards.
+            In any case, each player sees the previously hidden treasure cards.&nbsp;
             { contractPlayerName } may now choose to increase the contract or keep it the same.
         </p>);
     }

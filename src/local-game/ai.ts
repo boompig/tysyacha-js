@@ -1,13 +1,45 @@
 /**
  * This is a temporary measure until we train a strong AI
- * Just bid some random amount
+ * For now the rules are relatively procedural
  */
 
 import { Bid, canPlayCard, getWinningBid, ITrickCard, MIN_BID_POINTS } from "../game-mechanics";
-import { Hand, Card } from "../cards";
+import { Hand, Card, CardValue, Suit, getMarriageValue } from "../cards";
 import { randInt } from "../utils";
 
+/**
+ * Return true iff this hand has at least 1 ace
+ */
+function _hasAce(hand: Hand): boolean {
+    for(let card of hand.cards) {
+        if (card.value === CardValue.ACE) {
+            return true;
+        }
+    }
+    return false;
+}
 
+function _bestMarriageSuit(hand: Hand): Suit | null {
+    let bestSuit = null as Suit | null;
+    let bestV = 0;
+    for (let suit of hand.marriages) {
+        let v = getMarriageValue(suit)
+        if (v > bestV) {
+            bestV = v;
+            bestSuit = suit;
+        }
+    }
+    return bestSuit;
+}
+
+
+/**
+ * Return a bid given this player's hand and the bidding history
+ * @param biddingHistory An array with each element representing both a bid and a player, in temporal order (last element is most recent)
+ * @param hand The player's hand
+ * @param playerName The name of this AI player
+ * @returns A bid, representing this AI. Guaranteed to be valid.
+ */
 function getBid(biddingHistory: Bid[], hand: Hand, playerName: string): Bid {
     // given the bidding history of other players, return a bet
 
@@ -17,34 +49,24 @@ function getBid(biddingHistory: Bid[], hand: Hand, playerName: string): Bid {
         points: 0,
     };
 
-    if (winningBid) {
-        if (winningBid.points >= 120) {
-            // the rule is, to bid over 120 you must have at least 1 marriage
-            if (hand.marriages.length === 0) {
-                return PASS;
-            }
-        }
-
-        // randomly we can bid higher or no
-        if (Math.random() < .5) {
-            return PASS;
-        } else {
-            return {
-                player: playerName,
-                points: winningBid.points + 5,
-            };
-        }
+    // make some assumptions about how many points we can take
+    let expectedPoints = 0;
+    const hasAce = _hasAce(hand);
+    const bestMarriageSuit = _bestMarriageSuit(hand);
+    if (hasAce && bestMarriageSuit) {
+        // for now we just assume that we can only make this amount
+        expectedPoints = 15 + getMarriageValue(bestMarriageSuit);
     } else {
-        // randomly we can bid 60 (minimum) or pass
-        if (Math.random() < .5) {
-            // pass
-            return PASS;
-        } else {
-            return {
-                player: playerName,
-                points: MIN_BID_POINTS,
-            };
-        }
+        expectedPoints = 0;
+    }
+
+    if ((winningBid && expectedPoints > winningBid.points) || (!winningBid && expectedPoints >= MIN_BID_POINTS)) {
+        return {
+            points: expectedPoints,
+            player: playerName,
+        };
+    } else {
+        return PASS;
     }
 }
 

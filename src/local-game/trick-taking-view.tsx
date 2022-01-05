@@ -4,6 +4,7 @@ import { PlayerView } from "../local-components/player-view";
 import { GamePhase, ITrickCard, getWinningCard } from "../game-mechanics";
 import { CardView } from "../local-components/card-view";
 import AI from "./ai";
+import { TableView } from "./table-view";
 
 interface IProps {
     // properties of the game
@@ -128,6 +129,11 @@ const TrickTakingView: FC<IProps> = (props: IProps) => {
     }
 
     return (<div className="trick-taking-view">
+
+        <TableView
+            playerNames={props.playerNames}
+            localPlayerIndex={props.localPlayerIndex}
+            activePlayerIndex={props.activePlayerIndex} />
 
         { isInstructionsShown ? instructions : null }
 
