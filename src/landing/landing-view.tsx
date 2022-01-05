@@ -1,15 +1,22 @@
-import React, {FC} from "react";
+import React, { FC, useState } from "react";
 import "./landing-view.css";
 import { randInt } from "../utils";
 
 interface IProps {};
 
+/**
+ * Game IDs with this many characters will be generated
+ * Short game IDs allow easy sharing or copy-pasting
+ */
 const GAME_ID_LENGTH = 6;
 
 /**
- * The game ID is a string containing numbers 0-9 and letters a-z
+ * The game ID is a string containing numbers 0-9 and lowercase letters a-z
  * It will be of length GAME_ID_LENGTH
+ * For a total entropy of 26 ^ GAME_ID_LENGTH
+ * For example, with a GAME_ID_LENGTH of 6 we have a possible 308,915,776 games
  * This provides a nice balance between entropy (possible values) and length
+ * We wouldn't want any duplicate game IDs (since they are not sequential)
  */
 function randomGameId(): string {
     let gameId = "";
@@ -24,12 +31,26 @@ function randomGameId(): string {
     return gameId;
 }
 
-const MAX_GAME_ID = 1e9;
+/**
+ * Only these languages are supported
+ * If any other language is passed via the query parameter, the page will refuse to render
+ */
+const SUPPORTED_LANGS = ['en'];
 
 /**
  * Land on this page when you go to the index
+ * Language is handled through a URL query parameter
  */
 const LandingView : FC <IProps> = (props: IProps) => {
+    // read the language from the query parameter
+    // by default, default to english
+    const url = new URL(window.location.href);
+    const urlLang = url.searchParams.get('lang');
+    if (urlLang && !SUPPORTED_LANGS.includes(urlLang)) {
+        throw new Error(`Language ${urlLang} is not yet supported`);
+    }
+    let [lang, setLang] = useState(urlLang ? urlLang : 'en');
+
     function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
         e.preventDefault();
 
@@ -46,13 +67,31 @@ const LandingView : FC <IProps> = (props: IProps) => {
         return false;
     }
 
+    function changeLang(langName: string) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('lang', langName);
+        window.location.href = url.toString();
+    }
 
     return (<div className="wrapper">
         <div className="hero">
+            <div className="lang-select-container">
+                {/* <div className="lang-select-option" role="button" onClick={ () => changeLang('ru') }>
+                    <img className="lang-select-flag" src="/img/Flag_of_Russia.svg.png" height="40px" />
+                    <div className="lang-select-name">Russian</div>
+                </div> */}
+                <div className="lang-select-option" role="button" onClick={ () => changeLang('en') }>
+                    <img className="lang-select-flag" src="/img/Flag_of_UK.svg.png" height="40px" />
+                    <div className="lang-select-name">English</div>
+                </div>
+            </div>
             <h1 className="title-text">1000!</h1>
         </div>
         <main>
-            <h1>Welcome to the Tysyacha Web App</h1>
+            <h1>Welcome to the Tysyacha Web App
+                { // 'Приветствую вас в Игру "Тысячя"'
+                }
+            </h1>
 
             <p className="instructions">
                 You can play the Russian card game Tysyacha here against sophisticated AI opponents.

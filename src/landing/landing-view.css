@@ -39,3 +39,20 @@ form input {
 form button {
     margin-top: .5rem;
 }
+
+.lang-select-container {
+    display: flex;
+    flex-direction: row-reverse;
+    flex-wrap: nowrap;
+    width: 100%;
+    padding-top: .8rem;
+    padding-right: .8rem;
+    color: white;
+    font-size: 1rem;
+}
+
+.lang-select-option {
+    display: inline-block;
+    margin-left: 1rem;
+    cursor: pointer;
+}
