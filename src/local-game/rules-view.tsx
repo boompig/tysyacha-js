@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 import { MIN_BID_POINTS } from '../game-mechanics';
-import { getSuits, Suit, getMarriageValue, getCardValues, CardValue, valueToString } from "../cards";
-import "./rules-view.css";
+import { getSuits, Suit, getMarriageValue, getCardValues, CardValue, valueToString } from '../cards';
+import './rules-view.css';
 
 interface IRulesViewProps {
 
@@ -61,8 +61,8 @@ export const RulesView : FC<IRulesViewProps> = (props: IRulesViewProps) => {
         <section>
             <h2>Bidding</h2>
             <p>
-                Each player, starting with the player to the left of the dealer.
-                That is the total point value they promise to take in the playing phase, summed over all the cards they win in each trick.
+                Each player, starting with the player to the left of the dealer, may place a bid.
+                This bid is the total point value they promise to take in the playing phase, summed over all the cards they win in each trick.
                 The minimum bid is { MIN_BID_POINTS } points and the bidding must increase in multiples of 5.
                 At the end of the bidding phase, the player with the highest bid holds the contract for that point value.
                 Any player may pass at any time (declining to make a bid), however once they pass they may <strong>not</strong> re-enter the bidding (in contrast to Bridge).
@@ -80,7 +80,7 @@ export const RulesView : FC<IRulesViewProps> = (props: IRulesViewProps) => {
             <p>
                 If a player holds a contract at the end of the bidding phase, the three <em>treasure</em> cards are flipped face up for all players to view.
                 Then the contract player takes those cards into their hand.
-                They may at this point revise their contract up (never down).
+                They may at this point revise their contract up (never down), or choose to keep their existing contract.
             </p>
 
             <p>
@@ -108,7 +108,7 @@ export const RulesView : FC<IRulesViewProps> = (props: IRulesViewProps) => {
             <h2>Point Values and Marriages</h2>
             <p>
                 The central mechanic of Tysyacha is the <em>marriage</em>.
-                A player has a "marriage" if they hold a King and Queen of the same suit.
+                A player has a <em>marriage</em> if they hold a King and Queen of the same suit.
                 That marriage can be declared during the playing phase, awarding that player a large number of points.
                 Declaring a marriage also makes that suit the <em>trump</em> suit.
                 The various marriage point values can be found in the table below.
@@ -174,7 +174,7 @@ export const RulesView : FC<IRulesViewProps> = (props: IRulesViewProps) => {
             <h3>Who Wins the Trick?</h3>
             <p>
                 If there is a trump suit, the highest trump card wins the trick (see table 2 for precedence).
-                If no trump has been played, the highest card played in the suit of the first card ("leading suit").
+                If no trump has been played (or there is no trump suit), the highest card played in the suit of the first card (<em>leading suit</em>) wins the trick.
                 Therefore, all cards of suits other than the trump suit and leading suit may not win tricks.
 
                 The winner of the trick has won the right to go next (start the next trick).
