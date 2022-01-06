@@ -68,6 +68,10 @@ export const RulesView : FC<IRulesViewProps> = (props: IRulesViewProps) => {
                 Any player may pass at any time (declining to make a bid), however once they pass they may <strong>not</strong> re-enter the bidding (in contrast to Bridge).
             </p>
 
+            <div className="alert alert-info" role="alert">
+                <strong>Note&nbsp;</strong>Any player can bid for any reason. They may bluff in order to force the bidding to go higher, or gamble on the treasure containing good cards.
+            </div>
+
             <p>
                 The bidding ends when either (a) all three players pass, or (b) one player makes a bid and the other two players pass.
                 If all three players pass, the cards are re-dealt by the same dealer and the round is re-played.
@@ -183,8 +187,14 @@ export const RulesView : FC<IRulesViewProps> = (props: IRulesViewProps) => {
                 That suit now becomes the trump.
             </p>
 
-            <div className="alert alert-info">
+            <div className="alert alert-info" role="alert">
                 <strong>Note&nbsp;</strong>The contract player may not declare a marriage on their first turn, since winning a trick is necessary first.
+            </div>
+
+            <p>More than one marriage may be declared per game, by any player. The trump changes immediately after the marriage declaration, voiding the previous trump suit.</p>
+
+            <div className="alert alert-warning" role="alert">
+                <strong>Warning&nbsp;</strong>Contract players should be careful when giving away queens and kings to other players at the end of bidding, as that may give those players a card they need for a marriage, possibly ruining your plans.
             </div>
 
             <h3>End of the Playing Phase - Scoring</h3>
