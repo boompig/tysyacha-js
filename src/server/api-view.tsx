@@ -198,7 +198,7 @@ export class ApiView extends React.PureComponent<IProps, IState> {
             let player = this.props.playingPhaseInfo.turn;
             let numTricksTaken = 0;
             let tricksTaken: ITrickCard[][] = [];
-            this.props.playingPhaseInfo.pastTricks.map((trick: IPastTrick) => {
+            this.props.playingPhaseInfo.pastTricks.forEach((trick: IPastTrick) => {
                 if(trick.winner === player) {
                     numTricksTaken += 1;
                     tricksTaken.push(trick.trick);

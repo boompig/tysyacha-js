@@ -310,6 +310,7 @@ function reevalContract(hand: Hand, treasureCards: Card[], currentContract: numb
 /**
  * Totally random card distribution, nice and simple
  */
+// eslint-disable-next-line
 function distributeCardsRandomly(hand: Hand, playerNames: string[], playerIndex: number) {
  const assignment = {} as {[key: string]: Card};
 
