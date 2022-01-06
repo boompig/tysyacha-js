@@ -197,6 +197,8 @@ export const RulesView : FC<IRulesViewProps> = (props: IRulesViewProps) => {
                 <strong>Warning&nbsp;</strong>Contract players should be careful when giving away queens and kings to other players at the end of bidding, as that may give those players a card they need for a marriage, possibly ruining your plans.
             </div>
 
+            <p>While no marriages are declared, there is no trump suit. There is no trump suit at the beginning of play.</p>
+
             <h3>End of the Playing Phase - Scoring</h3>
             <p>
                 Once all 8 tricks have been taken, players count the number of points contained in each trick they have taken and sum them.
@@ -225,6 +227,8 @@ export const RulesView : FC<IRulesViewProps> = (props: IRulesViewProps) => {
             <p>If, after 3 deals, a contract is not established (all players pass), the dealing player receives -120 points and the dealer role is rotated clockwise.</p>
 
             <p>No player may bid more than 120 points unless they hold at least one marriage in their hand.</p>
+
+            <p>The total number of points in the deck (without marriages) is 120.</p>
         </section>
 
         <section>
