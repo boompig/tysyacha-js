@@ -80,11 +80,11 @@ const LandingView : FC <IProps> = (props: IProps) => {
         <div className="hero">
             <div className="lang-select-container">
                 {/* <div className="lang-select-option" role="button" onClick={ () => changeLang('ru') }>
-                    <img className="lang-select-flag" src="/img/Flag_of_Russia.svg.png" height="40px" />
+                    <img className="lang-select-flag" src="/img/Flag_of_Russia.svg.png" height="40px" alt="Russian flag" />
                     <div className="lang-select-name">Russian</div>
                 </div> */}
                 <div className="lang-select-option" role="button" onClick={ () => changeLang('en') }>
-                    <img className="lang-select-flag" src="/img/Flag_of_UK.svg.png" height="40px" />
+                    <img className="lang-select-flag" src="/img/Flag_of_UK.svg.png" height="40px" alt="UK flag" />
                     <div className="lang-select-name">English</div>
                 </div>
             </div>

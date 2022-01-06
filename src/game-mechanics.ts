@@ -269,8 +269,34 @@ export function groupTricksByPlayer(playerNames: string[], tricksTaken: IPastTri
     return tricksPerPlayer;
 }
 
-export function computeRoundScores(playerNames: string[], tricksTaken: {[key: string]: ITrickCard[][]}, declaredMarriages: {[key: string]: Suit[]}): {[key: string]: number} {
+interface IScores {
+    /**
+     * Scores before we factor in the contract
+     */
+    raw: {[key: string]: number};
+    /**
+     * Scores after we factor in the contract
+     */
+    final: {[key: string]: number};
+}
+
+/**
+ * Compute the scores for each player in the round, taking into account who was the contract player
+ * @param playerNames List of all players' names
+ * @param tricksTaken A map from player names to the tricks they have taken
+ * @param declaredMarriages A map from player names to the marriages they declared
+ * @param contract The *final* contract
+ */
+export function computeRoundScores(
+    playerNames: string[],
+    tricksTaken: { [key: string]: ITrickCard[][] },
+    declaredMarriages: { [key: string]: Suit[] },
+    contract: Bid
+): IScores {
+    const rawPoints = {} as {[key: string]: number};
     const finalPoints = {} as {[key: string]: number};
+
+    // first calculate the raw scores that the players earned that round
     playerNames.forEach((name: string) => {
         let pts = countTrickPoints(tricksTaken[name]);
         if(name in declaredMarriages) {
@@ -278,9 +304,28 @@ export function computeRoundScores(playerNames: string[], tricksTaken: {[key: st
                 pts += getMarriageValue(suit);
             });
         }
-        finalPoints[name] = pts;
+        rawPoints[name] = pts;
+        finalPoints[name] = 0;
     });
-    return finalPoints;
+
+    for (let name of playerNames) {
+        if (name === contract.player) {
+            // now figure out if the contract player fulfilled their contract
+            if (rawPoints[name] >= contract.points) {
+                finalPoints[name] = contract.points;
+            } else {
+                finalPoints[name] = -1 * contract.points;
+            }
+        } else {
+            // all other players just get their raw points
+            finalPoints[name] = rawPoints[name];
+        }
+    }
+
+    return {
+        raw: rawPoints,
+        final: finalPoints,
+    };
 }
 
 export type TCards = {[key: string]: Hand};

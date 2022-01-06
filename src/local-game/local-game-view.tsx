@@ -199,6 +199,7 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
                 dealerIndex: savedGameState.dealerIndex,
                 round: savedGameState.round,
                 scores: savedGameState.scores,
+                numFailedDeals: savedGameState.numFailedDeals,
             });
             this.setState({
                 isGameReady: true,
@@ -240,6 +241,7 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
     /**
      * @param scores map from player names to the scores they received in that round.
      * These numbers may be negative.
+     * NOTE: The scores received here should be reflective of the result of the contract. That computation is up to the *caller*
      * @param isEarlyExit Whether something happened to prevent the full game from being played
      */
     onRoundOver(scores: {[key: string]: number}, isEarlyExit: boolean): void {
@@ -249,6 +251,7 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
                 numFailedDeals: this.state.numFailedDeals + 1,
             }, () => {
                 console.log(`number of failed deals is now ${this.state.numFailedDeals}`);
+                this.saveGameState();
             });
         } else {
             // current round must be at least 1

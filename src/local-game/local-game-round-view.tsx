@@ -1,6 +1,6 @@
 import React, { PureComponent } from "react";
 import "../card.css";
-import { Card, CardValue, Deck, Hand, Suit } from "../cards";
+import { Card, Deck, Hand, Suit } from "../cards";
 import { DistributeCardsView } from "./distribute-cards-view";
 import { Bid, GamePhase, getWinningCard, ITrickCard } from "../game-mechanics";
 import { RoundScoringView } from "../local-components/round-scoring-view";
@@ -519,7 +519,14 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
                         playerNames={this.props.playerNames}
                         localPlayerIndex={this.props.localPlayerIndex}
                         activePlayerIndex={this.props.dealerIndex} />
-                    <div className="instructions">{ this.props.playerNames[this.props.dealerIndex] } is dealing</div>
+                    <div className="instructions">
+                        {
+                            this.props.numFailedDeals > 0 ?
+                            <span>The last deal failed - 3 passes in a row.&nbsp;</span> :
+                            null
+                        }
+                        { this.props.playerNames[this.props.dealerIndex] } is dealing.
+                    </div>
                     <div className="action-container">
                         <button type="button" className="btn btn-success btn-lg"
                             onClick={this.dealCards}>Deal</button>
