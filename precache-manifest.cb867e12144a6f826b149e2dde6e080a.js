@@ -1,6 +1,6 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "6ade09112f58bfd28dc27ecee98e3ec9",
+    "revision": "9ad3a525cf97205e9730a740ec32a6a1",
     "url": "/tysyacha-js/index.html"
   },
   {
@@ -8,8 +8,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/tysyacha-js/static/css/2.5544c887.chunk.css"
   },
   {
-    "revision": "de7a46f8f4d733ca29dd",
-    "url": "/tysyacha-js/static/css/main.ca819259.chunk.css"
+    "revision": "8b4770d58b319006cd77",
+    "url": "/tysyacha-js/static/css/main.46483738.chunk.css"
   },
   {
     "revision": "16bf24f02c5497aec692",
@@ -20,8 +20,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/tysyacha-js/static/js/2.08b4f7bf.chunk.js.LICENSE.txt"
   },
   {
-    "revision": "de7a46f8f4d733ca29dd",
-    "url": "/tysyacha-js/static/js/main.ef0e5efe.chunk.js"
+    "revision": "8b4770d58b319006cd77",
+    "url": "/tysyacha-js/static/js/main.0debfb64.chunk.js"
   },
   {
     "revision": "86aa028035ec85dce27e",
