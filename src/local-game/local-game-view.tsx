@@ -147,7 +147,7 @@ const AI_PLAYER_NAMES = ["Alisa", "Elena", "Gallina", "Misha", "Boris"];
  * These are the only valid nav tabs.
  * If the tab (hash) is not among these, then display an error
  */
-const VALID_NAV_TABS = ['#game', '#scorecard', '#rules'];
+const VALID_NAV_TABS = ['#local-ai-game', '#scorecard', '#rules'];
 
 /**
  * This is the top-level component for a local game against 2 AI opponents.
@@ -321,6 +321,12 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
      * Moves between different views
      */
     handleChangeNavTab(newTab: string) {
+        if (newTab === '#') {
+            // go back to the main landing screen
+            const url = new URL(window.location.href);
+            url.hash = '#';
+            window.location.href = url.toString();
+        }
         this.setState({
             navTab: newTab,
         });
@@ -339,7 +345,7 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
 
         if (this.state.isGameReady) {
             switch (this.state.navTab) {
-                case '#game':
+                case '#local-ai-game':
                     mainView = <LocalGameRoundView
                         randomSeed={this.state.randomSeed}
                         gameId={this.props.gameId}

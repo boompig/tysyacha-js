@@ -57,8 +57,8 @@ const LandingView : FC <IProps> = (props: IProps) => {
         // generate a unique random game ID
         const gameId = randomGameId();
         // navigate to the right page
-        const url = new URL(`${window.location.protocol}//${window.location.host}`);
-        url.pathname = '/local-ai-game';
+        const url = new URL(window.location.href);
+        url.hash = '#local-ai-game';
         url.searchParams.set('gameId', gameId.toString());
         const playerName = (e.target as any).playerName.value;
         url.searchParams.set('playerName', playerName);
@@ -78,16 +78,16 @@ const LandingView : FC <IProps> = (props: IProps) => {
 
     return (<div className="wrapper">
         <div className="hero">
-            <div className="lang-select-container">
+            {/* <div className="lang-select-container"> */}
                 {/* <div className="lang-select-option" role="button" onClick={ () => changeLang('ru') }>
                     <img className="lang-select-flag" src="/img/Flag_of_Russia.svg.png" height="40px" alt="Russian flag" />
                     <div className="lang-select-name">Russian</div>
                 </div> */}
-                <div className="lang-select-option" role="button" onClick={ () => changeLang('en') }>
+                {/* <div className="lang-select-option" role="button" onClick={ () => changeLang('en') }>
                     <img className="lang-select-flag" src="/img/Flag_of_UK.svg.png" height="40px" alt="UK flag" />
                     <div className="lang-select-name">English</div>
                 </div>
-            </div>
+            </div> */}
             <h1 className="title-text">1000!</h1>
         </div>
         <main>
@@ -111,6 +111,10 @@ const LandingView : FC <IProps> = (props: IProps) => {
             </form>
 
         </main>
+
+        <footer>
+            Created by Daniel Kats in 2021
+        </footer>
     </div>);
 };
 

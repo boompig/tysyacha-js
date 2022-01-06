@@ -27,7 +27,7 @@ const Navbar: FC<IProps> = (props: IProps) => {
         <div className="collapse navbar-collapse" id="navbarSupportedContent">
             <ul className="nav nav-pills">
                 <li className="nav-item">
-                    <a className={ props.hash === '#game' ? "nav-link active" : "nav-link" } href="#game" onClick={handleClick}>Game</a>
+                    <a className={ props.hash === '#local-ai-game' ? "nav-link active" : "nav-link" } href="#local-ai-game" onClick={handleClick}>Game</a>
                 </li>
                 <li className="nav-item">
                     <a className={ props.hash === '#scorecard' ? "nav-link active" : "nav-link" } href="#scorecard" onClick={handleClick}>Scorecard</a>

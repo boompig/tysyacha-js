@@ -8,10 +8,12 @@ import { ServerView } from "./server/server-view";
 import { LandingView } from "./landing/landing-view";
 // import { register } from "./serviceWorkerRegister";
 
-console.debug(`path: ${window.location.pathname}`);
+console.debug(`hash: ${window.location.hash}`);
 
-switch (window.location.pathname) {
-    case '/':
+switch (window.location.hash) {
+    case '':
+    case '#':
+    case '#landing':
         document.title = 'Tysyacha';
 
         ReactDOM.render(
@@ -21,7 +23,7 @@ switch (window.location.pathname) {
             document.getElementById('root')
         );
         break;
-    case '/lounge':
+    case '#lounge':
         ReactDOM.render(
             <React.StrictMode>
                 <Lounge />
@@ -29,7 +31,9 @@ switch (window.location.pathname) {
             document.getElementById('root')
         );
         break;
-    case '/local-ai-game':
+    case '#local-ai-game':
+    case '#rules':
+    case '#scorecard':
         // player name and game ID should be set in the GET string
         const url = new URL(window.location.href);
         const gameId = url.searchParams.get('gameId');
@@ -51,7 +55,7 @@ switch (window.location.pathname) {
             document.getElementById('root')
         );
         break;
-    case '/server':
+    case '#server':
         ReactDOM.render(
             <React.StrictMode>
                 <ServerView />
@@ -59,7 +63,7 @@ switch (window.location.pathname) {
             document.getElementById('root')
         );
         break;
-    case '/game':
+    case '#game':
         ReactDOM.render(
             <React.StrictMode>
                 <App />
@@ -69,7 +73,7 @@ switch (window.location.pathname) {
         break;
     default:
         ReactDOM.render(
-            <p>Unknown path</p>,
+            <p>Unknown hash - { window.location.hash }</p>,
             document.getElementById('root')
         );
         break;
