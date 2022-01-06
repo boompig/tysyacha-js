@@ -32,6 +32,9 @@ const Navbar: FC<IProps> = (props: IProps) => {
                 <li className="nav-item">
                     <a className={ props.hash === '#scorecard' ? "nav-link active" : "nav-link" } href="#scorecard" onClick={handleClick}>Scorecard</a>
                 </li>
+                <li className="nav-item">
+                    <a className={ props.hash === '#rules' ? "nav-link active" : "nav-link" } href="#rules" onClick={handleClick}>Rules</a>
+                </li>
             </ul>
         </div>
         <span className="navbar-text">Local Game {props.gameId} vs AI</span>

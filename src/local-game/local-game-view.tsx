@@ -5,6 +5,7 @@ import "./local-game.css";
 import { GamePhase } from "../game-mechanics";
 import { Navbar } from "./navbar";
 import { LoadingView } from "./loading-view";
+import { RulesView } from "./rules-view";
 import { randInt } from "../utils";
 
 /**
@@ -130,6 +131,11 @@ interface ILocalGameState {
      * This is passed from the navbar
      */
     navTab: string;
+
+    /**
+     * True iff the intro dialog is shown
+     */
+    isIntroDialogShown: boolean;
 }
 
 /**
@@ -137,6 +143,11 @@ interface ILocalGameState {
  * Users should not modify this array but should instead clone it
  */
 const AI_PLAYER_NAMES = ["Alisa", "Elena", "Gallina", "Misha", "Boris"];
+/**
+ * These are the only valid nav tabs.
+ * If the tab (hash) is not among these, then display an error
+ */
+const VALID_NAV_TABS = ['#game', '#scorecard', '#rules'];
 
 /**
  * This is the top-level component for a local game against 2 AI opponents.
@@ -149,6 +160,14 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
         const scores = getInitialScores(playerNames);
         // guaranteed to not be -1
         const localPlayerIndex = playerNames.indexOf(props.playerName);
+        let navTab = window.location.hash;
+        if (!navTab) {
+            // default is to show the game view
+            navTab = '#game';
+        } else if (!VALID_NAV_TABS.includes(navTab)) {
+            throw new Error(`Invalid hash ${navTab}. Valid values are ${VALID_NAV_TABS}`);
+        }
+
 
         this.state = {
             isGameReady: false,
@@ -160,7 +179,11 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
             localPlayerIndex: localPlayerIndex,
             numFailedDeals: 0,
             phase: GamePhase.NOT_DEALT,
-            navTab: '#game',
+            navTab: navTab,
+
+            // by default show the intro dialog
+            isIntroDialogShown: true,
+
             // TODO
             randomSeed: 1,
         };
@@ -200,6 +223,7 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
                 round: savedGameState.round,
                 scores: savedGameState.scores,
                 numFailedDeals: savedGameState.numFailedDeals,
+                isIntroDialogShown: savedGameState.isIntroDialogShown || false,
             });
             this.setState({
                 isGameReady: true,
@@ -302,6 +326,14 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
         });
     }
 
+    handleDismissIntroDialog() {
+        this.setState({
+            isIntroDialogShown: false,
+        }, () => {
+            this.saveGameState();
+        });
+    }
+
     render(): JSX.Element {
         let mainView = null;
 
@@ -326,7 +358,9 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
                         playerNames={this.state.playerNames}
                         scores={this.state.scores} />;
                     break;
-
+                case '#rules':
+                    mainView = <RulesView />;
+                    break;
                 default:
                     throw new Error(`unknown view: ${this.state.navTab}`);
             }
