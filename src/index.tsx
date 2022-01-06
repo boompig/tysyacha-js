@@ -12,6 +12,8 @@ console.debug(`path: ${window.location.pathname}`);
 
 switch (window.location.pathname) {
     case '/':
+    case '/tysyacha-js':
+    case '/tysyacha-js/':
         document.title = 'Tysyacha';
 
         ReactDOM.render(

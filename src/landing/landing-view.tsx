@@ -70,6 +70,7 @@ const LandingView : FC <IProps> = (props: IProps) => {
         return false;
     }
 
+    // eslint-disable-next-line
     function changeLang(langName: string) {
         const url = new URL(window.location.href);
         url.searchParams.set('lang', langName);
@@ -78,16 +79,16 @@ const LandingView : FC <IProps> = (props: IProps) => {
 
     return (<div className="wrapper">
         <div className="hero">
-            <div className="lang-select-container">
+            {/* <div className="lang-select-container"> */}
                 {/* <div className="lang-select-option" role="button" onClick={ () => changeLang('ru') }>
                     <img className="lang-select-flag" src="/img/Flag_of_Russia.svg.png" height="40px" alt="Russian flag" />
                     <div className="lang-select-name">Russian</div>
                 </div> */}
-                <div className="lang-select-option" role="button" onClick={ () => changeLang('en') }>
+                {/* <div className="lang-select-option" role="button" onClick={ () => changeLang('en') }>
                     <img className="lang-select-flag" src="/img/Flag_of_UK.svg.png" height="40px" alt="UK flag" />
                     <div className="lang-select-name">English</div>
-                </div>
-            </div>
+                </div> */}
+            {/* </div> */}
             <h1 className="title-text">1000!</h1>
         </div>
         <main>
@@ -109,8 +110,11 @@ const LandingView : FC <IProps> = (props: IProps) => {
                     />
                 <button type="submit" className="btn btn-lg btn-primary form-control">Play</button>
             </form>
-
         </main>
+
+        <footer>
+            Written by Daniel Kats in 2021
+        </footer>
     </div>);
 };
 

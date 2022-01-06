@@ -14,9 +14,13 @@ body {
 }
 
 .hero .title-text {
+    /* hero banner text styling */
     position: relative;
     top: 45%;
-    left: 45%;
+    left: 50%;
+    text-align: center;
+    transform: translate(-50%, -50%);
+    /* custom styling */
     font-size: 5rem;
     font-weight: lighter;
     color: white;
@@ -55,4 +59,14 @@ form button {
     display: inline-block;
     margin-left: 1rem;
     cursor: pointer;
+}
+
+footer {
+    font-size: .9rem;
+    color: #aaa;
+    position: absolute;
+    bottom: .5rem;
+    text-align: center;
+    margin: 0 auto;
+    width: 99%;
 }
