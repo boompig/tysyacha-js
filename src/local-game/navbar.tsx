@@ -24,6 +24,8 @@ const Navbar: FC<IProps> = (props: IProps) => {
             <span className="navbar-toggler-icon"></span>
         </button>
 
+        <span className="navbar-text">Local Game {props.gameId} vs AI</span>
+
         <div className="collapse navbar-collapse" id="navbarSupportedContent">
             <ul className="nav nav-pills">
                 <li className="nav-item">
@@ -37,7 +39,6 @@ const Navbar: FC<IProps> = (props: IProps) => {
                 </li>
             </ul>
         </div>
-        <span className="navbar-text">Local Game {props.gameId} vs AI</span>
     </nav>);
 };
 

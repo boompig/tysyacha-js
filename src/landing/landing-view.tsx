@@ -76,7 +76,7 @@ const LandingView : FC <IProps> = (props: IProps) => {
         window.location.href = url.toString();
     }
 
-    return (<div className="wrapper">
+    return (<div className="wrapper landing-view">
         <div className="hero">
             {/* <div className="lang-select-container"> */}
                 {/* <div className="lang-select-option" role="button" onClick={ () => changeLang('ru') }>

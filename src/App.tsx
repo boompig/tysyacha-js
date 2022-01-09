@@ -115,7 +115,7 @@ function App(): JSX.Element {
                 <header>
                     <div className='game-id'>Game ID: { gameId }</div>
                 </header>
-                <main className='container'>
+                <main className="container app-main-container">
                     <GameView
                         api={api}
                         gameId={gameId as string}
@@ -124,7 +124,7 @@ function App(): JSX.Element {
             </div>
         );
     } else {
-        return (<main className='container'>
+        return (<main className="container app-main-container">
             <GameLobby
                 name={name}
                 gameId={gameId}

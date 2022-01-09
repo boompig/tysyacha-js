@@ -1,9 +1,15 @@
+/**
+ * Styling for the landing only
+ * Written by Daniel Kats
+ * Jan 9, 2021
+ */
+
 body {
     height: 100%;
     width: 100%;
 }
 
-.wrapper {
+.wrapper.landing-view {
     padding: 0;
     margin: 0;
 }

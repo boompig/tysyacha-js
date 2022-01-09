@@ -1,6 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
 import App from './App';
 import Lounge from "./lounge/lounge";
 import { LocalGameView } from "./local-game/local-game-view";
