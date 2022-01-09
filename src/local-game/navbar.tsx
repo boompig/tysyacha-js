@@ -1,4 +1,5 @@
-import React, { FC } from "react";
+import React, { FC } from 'react';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 interface IProps {
     gameId: string;
@@ -16,15 +17,15 @@ const Navbar: FC<IProps> = (props: IProps) => {
         props.setNavHash(hash);
     }
 
-    return (<nav className="navbar navbar-expand-lg navbar-light bg-light">
+    return (<nav className="navbar navbar-expand-md navbar-light bg-light">
         <a className="navbar-brand" href="#">Tysyacha</a>
 
         <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
-            aria-expanded="false" aria-label="Toggle navigation">
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span className="navbar-toggler-icon"></span>
         </button>
 
-        <span className="navbar-text">Local Game {props.gameId} vs AI</span>
+        {/* <span className="navbar-text">Local Game {props.gameId} vs AI</span> */}
 
         <div className="collapse navbar-collapse" id="navbarSupportedContent">
             <ul className="nav nav-pills">
