@@ -210,8 +210,9 @@ export function getWinningBid(bidHistory: Bid[]): Bid | null {
 
 /**
  * Count the # of points in a single trick
+ * *DO NOT* round here
  */
-export function _countTrickPoints(trick: ITrickCard[]): number {
+export function countTrickPoints(trick: ITrickCard[]): number {
     return trick.map((tc: ITrickCard) => {
         return tc.card.value;
     }).reduce((total: number, cardValue: CardValue) => {
@@ -242,9 +243,9 @@ export function isBiddingComplete(bidHistory: Bid[]): boolean {
 /**
  * Count the # of points in all tricks. Round to nearest 5
  */
-export function countTrickPoints(tricks: ITrickCard[][]): number {
+export function countAllTrickPoints(tricks: ITrickCard[][]): number {
     const pts  = tricks.map((trick: ITrickCard[]) => {
-        return _countTrickPoints(trick);
+        return countTrickPoints(trick);
     }).reduce((total: number, trickPoints: number) => {
         return total + trickPoints;
     }, 0);
@@ -298,7 +299,7 @@ export function computeRoundScores(
 
     // first calculate the raw scores that the players earned that round
     playerNames.forEach((name: string) => {
-        let pts = countTrickPoints(tricksTaken[name]);
+        let pts = countAllTrickPoints(tricksTaken[name]);
         if(name in declaredMarriages) {
             declaredMarriages[name].forEach((suit: Suit) => {
                 pts += getMarriageValue(suit);
