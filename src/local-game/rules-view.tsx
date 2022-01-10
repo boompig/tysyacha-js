@@ -222,6 +222,25 @@ export const RulesView : FC<IRulesViewProps> = (props: IRulesViewProps) => {
         </section>
 
         <section>
+            <h2>End of the Game</h2>
+
+            <p>Hands are played until one player accumulates 1000 points.</p>
+
+            <h3>Barrel</h3>
+
+            <p>No player may have between 880 and 1000 points. If any player accumulates between 880 and 1000 points, their score is rounded down to 880.
+                Any player who has 880 points is said to be <em>on the barrel</em>.
+                Once a player is on the barrel, they have 3 turns to get 120 points (or more) in a single turn and win the game.
+                Any time a player on the barrel gets less than 120 points, those points are rounded down to 0.
+                If the player on the barrel does not gain 120 points in 3 turns, they receive -120 points, and are thrown off the barrel.
+            </p>
+
+            <p>
+                A player may win with more than 1000 points.
+            </p>
+        </section>
+
+        <section>
             <h2>Misc.</h2>
 
             <p>If, after 3 deals, a contract is not established (all players pass), the dealing player receives -120 points and the dealer role is rotated clockwise.</p>
@@ -235,6 +254,9 @@ export const RulesView : FC<IRulesViewProps> = (props: IRulesViewProps) => {
             <h2>Glossary</h2>
 
             <ul>
+                <li>
+                    <strong className="glossary-term">[On The] Barrel</strong> - a player who accumulates 880 points. They have 3 turns to get 1000 points or they receive -120 points.
+                </li>
                 <li>
                     <strong className="glossary-term">Contract</strong> - the highest (winning) bid in the bidding phase. The contract player must achieve at least this number during the playing phase.
                 </li>
