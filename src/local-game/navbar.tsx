@@ -26,6 +26,7 @@ const Navbar: FC<IProps> = (props: IProps) => {
         url.hash = newHash;
         console.debug(`Hash is now ${newHash}`);
         window.location.href = url.toString();
+        window.location.reload();
     }
 
     function handleClick(e: React.SyntheticEvent<HTMLAnchorElement>) {
@@ -56,12 +57,7 @@ const Navbar: FC<IProps> = (props: IProps) => {
                         <a className={ props.hash === '#local-ai-game' ? "nav-link active" : "nav-link" } href="#local-ai-game" onClick={handleClick}>Game</a>
                     </li> :
                     null }
-                {/* if ther eis no game ID specified, cannot show the score card - what game are we showing? */}
-                { props.gameId ?
-                    <li className="nav-item">
-                        <a className={ props.hash === '#scorecard' ? "nav-link active" : "nav-link" } href="#scorecard" onClick={handleClick}>Scorecard</a>
-                    </li> :
-                    null }
+                {/* if there is no game ID specified, cannot show the score card - what game are we showing? */}
                 <li className="nav-item">
                     <a className={ props.hash === '#rules' ? "nav-link active" : "nav-link" } href="#rules" onClick={handleClick}>Rules</a>
                 </li>

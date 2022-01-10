@@ -1,6 +1,6 @@
 import React, { PureComponent } from "react";
 import { LocalGameRoundView } from "./local-game-round-view";
-import ScoreView from "../score-view";
+import { ScoreView } from "./score-view-modal";
 import "./local-game.css";
 import { GamePhase, getBarrelPlayers } from "../game-mechanics";
 import { Navbar } from "./navbar";
@@ -160,9 +160,9 @@ interface ILocalGameState {
     randomSeed: number;
 
     /**
-     * This is passed from the navbar
+     * True iff we should show the score card
      */
-    navTab: string;
+    isScorecardShown: boolean;
 
     /**
      * True iff the intro dialog is shown
@@ -175,11 +175,6 @@ interface ILocalGameState {
  * Users should not modify this array but should instead clone it
  */
 const AI_PLAYER_NAMES = ["Alisa", "Elena", "Gallina", "Misha", "Boris"];
-/**
- * These are the only valid nav tabs.
- * If the tab (hash) is not among these, then display an error
- */
-const VALID_NAV_TABS = ['#local-ai-game', '#scorecard', '#rules'];
 
 /**
  * This is the top-level component for a local game against 2 AI opponents.
@@ -194,14 +189,6 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
 
         // guaranteed to not be -1
         const localPlayerIndex = playerNames.indexOf(props.playerName);
-        let navTab = window.location.hash;
-        if (!navTab) {
-            // default is to show the game view
-            navTab = '#game';
-        } else if (!VALID_NAV_TABS.includes(navTab)) {
-            throw new Error(`Invalid hash ${navTab}. Valid values are ${VALID_NAV_TABS}`);
-        }
-
 
         this.state = {
             isGameReady: false,
@@ -216,10 +203,11 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
             localPlayerIndex: localPlayerIndex,
             numFailedDeals: 0,
             phase: GamePhase.NOT_DEALT,
-            navTab: navTab,
 
             // by default show the intro dialog
             isIntroDialogShown: true,
+            // by default scorecard is hidden
+            isScorecardShown: false,
 
             // TODO
             randomSeed: 1,
@@ -231,7 +219,7 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
         this.loadGameState = this.loadGameState.bind(this);
         this.getBoltScores = this.getBoltScores.bind(this);
         this.handleChangePhase = this.handleChangePhase.bind(this);
-        this.handleChangeNavTab = this.handleChangeNavTab.bind(this);
+        this.handleChangeViewScorecard = this.handleChangeViewScorecard.bind(this);
     }
 
     saveGameState() {
@@ -404,22 +392,6 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
         });
     }
 
-    /**
-     * This is a callback from the navbar
-     * Moves between different views
-     */
-    handleChangeNavTab(newTab: string) {
-        if (newTab === '#') {
-            // go back to the main landing screen
-            const url = new URL(window.location.href);
-            url.hash = '#';
-            window.location.href = url.toString();
-        }
-        this.setState({
-            navTab: newTab,
-        });
-    }
-
     handleDismissIntroDialog() {
         this.setState({
             isIntroDialogShown: false,
@@ -428,36 +400,35 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
         });
     }
 
+    handleChangeViewScorecard(isVisible: boolean) {
+        this.setState({
+            isScorecardShown: isVisible,
+        });
+    }
+
+    handleChangeHash(newHash: string) {
+        const url = new URL(window.location.href);
+        url.hash = newHash;
+        console.debug(`[local game view] Hash is now ${newHash}`);
+        window.location.href = url.toString();
+        window.location.reload();
+    }
+
     render(): JSX.Element {
         let mainView = null;
 
         if (this.state.isGameReady) {
-            switch (this.state.navTab) {
-                case '#local-ai-game':
-                    mainView = <LocalGameRoundView
-                        randomSeed={this.state.randomSeed}
-                        gameId={this.props.gameId}
-                        roundNum={this.state.round}
-                        isAllCardsShown={this.state.isAllCardsShown}
-                        playerNames={this.state.playerNames}
-                        dealerIndex={this.state.dealerIndex}
-                        onRoundOver={this.onRoundOver}
-                        numFailedDeals={this.state.numFailedDeals}
-                        localPlayerIndex={this.state.localPlayerIndex}
-                        onChangePhase={this.handleChangePhase} />;
-                    break;
-                case '#scorecard':
-                    mainView = <ScoreView
-                        round={this.state.round}
-                        playerNames={this.state.playerNames}
-                        scores={this.state.scores} />;
-                    break;
-                case '#rules':
-                    mainView = <RulesView />;
-                    break;
-                default:
-                    throw new Error(`unknown view: ${this.state.navTab}`);
-            }
+            mainView = <LocalGameRoundView
+                randomSeed={this.state.randomSeed}
+                gameId={this.props.gameId}
+                roundNum={this.state.round}
+                isAllCardsShown={this.state.isAllCardsShown}
+                playerNames={this.state.playerNames}
+                dealerIndex={this.state.dealerIndex}
+                onRoundOver={this.onRoundOver}
+                numFailedDeals={this.state.numFailedDeals}
+                localPlayerIndex={this.state.localPlayerIndex}
+                onChangePhase={this.handleChangePhase} />;
         } else {
             mainView = <LoadingView />
         }
@@ -465,10 +436,28 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
         return (<div className="wrapper">
             <header>
                 <Navbar gameId={this.props.gameId}
-                    setNavHash={this.handleChangeNavTab}
-                    hash={this.state.navTab} />
+                    hash={window.location.hash}
+                    setNavHash={this.handleChangeHash} />
             </header>
             <main className="container">
+                <div className="main-control-panel">
+                    <button type="button" className="btn btn-info"
+                        data-toggle="modal"
+                        data-target="#score-view-modal"
+                        onClick={ (e) => this.handleChangeViewScorecard(!this.state.isScorecardShown) }>
+                        { this.state.isScorecardShown ? 'Hide Scorecard' : 'View Scorecard' }
+                    </button>
+                </div>
+                { this.state.isScorecardShown ?
+                    <div>
+                        <ScoreView round={this.state.round}
+                            playerNames={this.state.playerNames}
+                            scores={this.state.scores}
+                            onDismiss={() => this.handleChangeViewScorecard(false)} />
+                        <div className="modal-backdrop fade show"
+                            onClick={() => this.handleChangeViewScorecard(false)}></div>
+                    </div> :
+                    null}
                 { mainView }
             </main>
         </div>);
