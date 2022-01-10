@@ -328,6 +328,20 @@ export function computeRoundScores(
     };
 }
 
+/**
+ * Return the name of any players currently on the barrel
+ */
+export function getBarrelPlayers(scores: {[key: string]: number[]}): string[] {
+    const barrelPlayers = [] as string[];
+    Object.entries(scores).forEach(([playerName, scoresArr]) => {
+        const l = scoresArr.length;
+        if (scoresArr[l - 1] === 880) {
+            barrelPlayers.push(playerName);
+        }
+    });
+    return barrelPlayers;
+}
+
 export type TCards = {[key: string]: Hand};
 
 export interface IDeal {

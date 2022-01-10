@@ -233,6 +233,19 @@ export const RulesView : FC<IRulesViewProps> = (props: IRulesViewProps) => {
                 Once a player is on the barrel, they have 3 turns to get 120 points (or more) in a single turn and win the game.
                 Any time a player on the barrel gets less than 120 points, those points are rounded down to 0.
                 If the player on the barrel does not gain 120 points in 3 turns, they receive -120 points, and are thrown off the barrel.
+                If a player on the barrel ever goes below 880 points, they are similarly off the barrel (for example they lose a contract).
+            </p>
+
+            <p>
+                If a player on the barrel fails to meet a contract on their third turn on the barrel, they receive the greater negative of the failed contract or -120.
+                For example, if a player loses a contract for 80 points on their third turn on the barrel, they receive -120 points.
+                However if that same player loses a contract for 140 points, they receive -140 points.
+                If a player on the barrel completes a contract on their third turn on the barrel, but the value of the contract is less than 120 points,
+                they receive -120 points anyway and receive no points for the contract.
+            </p>
+            <p>
+                A player can win the game (accumulate 1000 points) even if they are not on the barrel.
+                For example, a player with 860 points may win the game by completing a contract for 140 or more points.
             </p>
 
             <p>
