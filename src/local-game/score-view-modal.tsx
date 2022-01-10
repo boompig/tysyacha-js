@@ -14,12 +14,7 @@ interface IScoreViewProps {
     /**
      * The current round
      */
-    round: number;
-
-    /**
-     * The currently selected round
-     */
-    selectedRound?: number;
+    currentRound: number;
 
     /**
      * Handler for when modal is dismissed
@@ -31,11 +26,11 @@ interface IScoreViewProps {
  * Shows the scores for all players across all rounds of the game
  */
 const ScoreView : FC<IScoreViewProps> = (props: IScoreViewProps) => {
-    const headerRow = props.playerNames.map((name: string) => {
+    const headerPlayerNames = props.playerNames.map((name: string) => {
         return <th key={`header-row-${name}`}>{ name }</th>;
     });
     const rounds: number[] = [];
-    for(let round = 0; round < props.round; round++) {
+    for(let round = 0; round < props.currentRound; round++) {
         rounds.push(round);
     }
 
@@ -44,10 +39,12 @@ const ScoreView : FC<IScoreViewProps> = (props: IScoreViewProps) => {
             return <td key={`score-row-${name}-round-${round}`}>{ props.scores[name][round] || 0 }</td>;
         });
         const classes : string[] = [];
-        if (props.selectedRound === round) {
-            classes.push('table-warning');
+        if (props.currentRound - 1 === round) {
+            // select the round before the current round
+            classes.push('table-primary');
         }
         return (<tr key={`score-row-${round}`} className={classes.join(' ')}>
+            <td>{ round || 'start' }</td>
             {scoreRow}
         </tr>);
     });
@@ -68,10 +65,11 @@ const ScoreView : FC<IScoreViewProps> = (props: IScoreViewProps) => {
                     </button>
                 </div>
                 <div className="modal-body">
-                    <table className="table table-striped table-sm" id="scoring-table">
+                    <table className="table table-sm" id="scoring-table">
                         <thead>
                             <tr>
-                                {headerRow}
+                                <th>Round</th>
+                                {headerPlayerNames}
                             </tr>
                         </thead>
                         <tbody>

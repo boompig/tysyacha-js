@@ -50,7 +50,7 @@ const Navbar: FC<IProps> = (props: IProps) => {
         {/* <span className="navbar-text">Local Game {props.gameId} vs AI</span> */}
 
         <div className="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul className="nav nav-pills">
+            <ul className="navbar-nav mr-auto">
                 {/* if there is no game ID specified, cannot navigate to the game */}
                 { props.gameId ?
                     <li className="nav-item">

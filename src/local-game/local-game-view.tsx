@@ -5,7 +5,6 @@ import "./local-game.css";
 import { GamePhase, getBarrelPlayers } from "../game-mechanics";
 import { Navbar } from "./navbar";
 import { LoadingView } from "./loading-view";
-import { RulesView } from "./rules-view";
 import { randInt } from "../utils";
 
 /**
@@ -441,7 +440,7 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
             </header>
             <main className="container">
                 <div className="main-control-panel">
-                    <button type="button" className="btn btn-info"
+                    <button type="button" className="btn btn-info btn-lg"
                         data-toggle="modal"
                         data-target="#score-view-modal"
                         onClick={ (e) => this.handleChangeViewScorecard(!this.state.isScorecardShown) }>
@@ -450,7 +449,7 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
                 </div>
                 { this.state.isScorecardShown ?
                     <div>
-                        <ScoreView round={this.state.round}
+                        <ScoreView currentRound={this.state.round}
                             playerNames={this.state.playerNames}
                             scores={this.state.scores}
                             onDismiss={() => this.handleChangeViewScorecard(false)} />

@@ -189,6 +189,11 @@ export const BiddingView : FC<IBiddingViewProps> = (props: IBiddingViewProps) =>
             localPlayerIndex={props.localPlayerIndex}
             activePlayerIndex={biddingPlayerIndex} />
 
+        <BidHistoryView
+            playerNames={props.playerNames}
+            startingBidPlayer={startingBidPlayer}
+            bidHistory={bidHistory} />
+
         <div className="round-info">
             <p>
                 It is { props.playerNames[biddingPlayerIndex]}'s turn to bid.
@@ -216,11 +221,6 @@ export const BiddingView : FC<IBiddingViewProps> = (props: IBiddingViewProps) =>
                     onClick={handleGetAIBid}>AI Bid</button>
             }
         </div>
-
-        <BidHistoryView
-            playerNames={props.playerNames}
-            startingBidPlayer={startingBidPlayer}
-            bidHistory={bidHistory} />
 
         <div className="player-hand-container">
             <h2>Your Hand</h2>
