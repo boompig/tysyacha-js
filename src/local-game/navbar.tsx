@@ -2,23 +2,44 @@ import React, { FC } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 interface IProps {
-    gameId: string;
+    /**
+     * If specified and not null, it means we're playing a game
+     */
+    gameId?: string | null;
+
     /**
      * Current nav hash
      */
     hash: string;
-    setNavHash(newHash: string): void;
+
+    /**
+     * Optionally provide a handler for what to do on a new hash
+     * Overrides the default handler (which just sets the nav hash and refreshes the page)
+     */
+    setNavHash?: (newHash: string) => void;
 };
 
 const Navbar: FC<IProps> = (props: IProps) => {
+    function defaultChangeNavHash(newHash: string) {
+        console.debug('Using default hash handler in navbar');
+        const url = new URL(window.location.href);
+        url.hash = newHash;
+        console.debug(`Hash is now ${newHash}`);
+        window.location.href = url.toString();
+    }
+
     function handleClick(e: React.SyntheticEvent<HTMLAnchorElement>) {
         const url = new URL((e.target as HTMLAnchorElement).href);
         const hash = url.hash;
-        props.setNavHash(hash);
+        if (props.setNavHash) {
+            props.setNavHash(hash);
+        } else {
+            defaultChangeNavHash(hash);
+        }
     }
 
-    return (<nav className="navbar navbar-expand-md navbar-light bg-light">
-        <a className="navbar-brand" href="#">Tysyacha</a>
+    return (<nav className="navbar navbar-expand-md navbar-light bg-light" id="tysyacha-navbar">
+        <a className="navbar-brand" href="#" onClick={handleClick}>Tysyacha</a>
 
         <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
             aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -29,12 +50,18 @@ const Navbar: FC<IProps> = (props: IProps) => {
 
         <div className="collapse navbar-collapse" id="navbarSupportedContent">
             <ul className="nav nav-pills">
-                <li className="nav-item">
-                    <a className={ props.hash === '#local-ai-game' ? "nav-link active" : "nav-link" } href="#local-ai-game" onClick={handleClick}>Game</a>
-                </li>
-                <li className="nav-item">
-                    <a className={ props.hash === '#scorecard' ? "nav-link active" : "nav-link" } href="#scorecard" onClick={handleClick}>Scorecard</a>
-                </li>
+                {/* if there is no game ID specified, cannot navigate to the game */}
+                { props.gameId ?
+                    <li className="nav-item">
+                        <a className={ props.hash === '#local-ai-game' ? "nav-link active" : "nav-link" } href="#local-ai-game" onClick={handleClick}>Game</a>
+                    </li> :
+                    null }
+                {/* if ther eis no game ID specified, cannot show the score card - what game are we showing? */}
+                { props.gameId ?
+                    <li className="nav-item">
+                        <a className={ props.hash === '#scorecard' ? "nav-link active" : "nav-link" } href="#scorecard" onClick={handleClick}>Scorecard</a>
+                    </li> :
+                    null }
                 <li className="nav-item">
                     <a className={ props.hash === '#rules' ? "nav-link active" : "nav-link" } href="#rules" onClick={handleClick}>Rules</a>
                 </li>

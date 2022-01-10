@@ -4,6 +4,10 @@
  * Jan 9, 2021
  */
 
+.navbar#tysyacha-navbar {
+    background-color: #afcdf7 !important;
+}
+
 .table-view {
     display: flex;
     flex-direction: row;

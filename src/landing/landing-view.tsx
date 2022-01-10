@@ -1,6 +1,7 @@
 import React, { FC, useState } from "react";
 import "./landing-view.css";
 import { randInt } from "../utils";
+import { Navbar } from "../local-game/navbar";
 
 interface IProps {};
 
@@ -76,7 +77,19 @@ const LandingView : FC <IProps> = (props: IProps) => {
         window.location.href = url.toString();
     }
 
+    function handleChangeHash(newHash: string) {
+        const url = new URL(window.location.href);
+        url.hash = newHash;
+        // navigate to that URL
+        window.location.href = url.toString();
+        console.debug(`[landing] hash is now ${newHash}`);
+        window.location.reload();
+    }
+
     return (<div className="wrapper landing-view">
+        <Navbar
+            hash={window.location.hash}
+            setNavHash={handleChangeHash} />
         <div className="hero">
             {/* <div className="lang-select-container"> */}
                 {/* <div className="lang-select-option" role="button" onClick={ () => changeLang('ru') }>

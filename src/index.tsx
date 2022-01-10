@@ -5,6 +5,8 @@ import Lounge from "./lounge/lounge";
 import { LocalGameView } from "./local-game/local-game-view";
 import { ServerView } from "./server/server-view";
 import { LandingView } from "./landing/landing-view";
+import { Navbar } from './local-game/navbar';
+import { RulesView } from './local-game/rules-view';
 // import { register } from "./serviceWorkerRegister";
 
 console.debug(`hash: ${window.location.hash}`);
@@ -30,8 +32,27 @@ switch (window.location.hash) {
             document.getElementById('root')
         );
         break;
+    case '#rules': {
+        const url = new URL(window.location.href);
+        const gameId = url.searchParams.get('gameId') || null;
+
+        ReactDOM.render(
+            <React.StrictMode>
+                <div className="wrapper">
+                    <header>
+                        <Navbar gameId={gameId}
+                            hash={window.location.hash} />
+                    </header>
+                    <main className="container">
+                        <RulesView />
+                    </main>
+                </div>
+            </React.StrictMode>,
+            document.getElementById('root')
+        );
+        break;
+    }
     case '#local-ai-game':
-    case '#rules':
     case '#scorecard':
         // player name and game ID should be set in the GET string
         const url = new URL(window.location.href);
