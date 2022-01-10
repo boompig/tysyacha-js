@@ -2,7 +2,7 @@ import React, { PureComponent } from "react";
 import { LocalGameRoundView } from "./local-game-round-view";
 import { ScoreView } from "./score-view-modal";
 import "./local-game.css";
-import { GamePhase, getBarrelPlayers } from "../game-mechanics";
+import { GamePhase, getBarrelPlayers, updateScores } from "../game-mechanics";
 import { Navbar } from "./navbar";
 import { LoadingView } from "./loading-view";
 import { randInt } from "../utils";
@@ -51,14 +51,6 @@ function getInitialScores(playerNames: string[]): {[key: string]: number[]} {
     return scores;
 }
 
-function getInitialBarrelCount(playerNames: string[]): {[key: string]: number} {
-    const barrelCounts = {} as {[key: string]: number};
-    playerNames.forEach((name: string) => {
-        barrelCounts[name] = -1;
-    });
-    return barrelCounts;
-}
-
 interface ILocalGameProps {
     /**
      * Unique ID assigned to this game
@@ -105,17 +97,6 @@ interface ILocalGameState {
      * Obviously at the end of round 0 (start of the game) everyone starts with score 0
      */
     scores: {[key: string]: number[]};
-
-    /**
-     * The number of turns, per player, than they have been on the barrel
-     * -1 -> the player is not currently on the barrel
-     * 2 -> the player has already been on the barrel for 2 full turns
-     * 3 -> the player has already been on the barrel for 3 full turns (this should never happen)
-     *
-     * This is a helpful (duplicate) state that can be derived from scores
-     * However we keep the accounting of them separate (make sure they are consistent)
-     */
-    barrelTurnCount: {[key: string]: number};
 
     /**
      * The players who won this game.
@@ -184,7 +165,6 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
 
         const playerNames = getPlayerNames(this.props.playerName);
         const scores = getInitialScores(playerNames);
-        const barrelTurnCount = getInitialBarrelCount(playerNames);
 
         // guaranteed to not be -1
         const localPlayerIndex = playerNames.indexOf(props.playerName);
@@ -195,7 +175,6 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
             playerNames: playerNames,
             dealerIndex: 0,
             scores: scores,
-            barrelTurnCount: barrelTurnCount,
             winningPlayers: [],
             round: 1,
             isAllCardsShown: false,
@@ -289,14 +268,18 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
     /**
      * This method is called when the round is over (with scores from the round).
      *
-     * @param scores map from player names to the scores they received in that round.
+     * @param roundScores map from player names to the scores they received in that round.
      * These numbers may be negative.
      * NOTE: The scores received here should be reflective of the result of the contract. That computation is up to the *caller*.
      * NOTE: The scores however do not take into account the barrel, or other factors outside the considerations of a single round.
      *
      * @param isEarlyExit Whether something happened to prevent the full game from being played
      */
-    onRoundOver(scores: {[key: string]: number}, isEarlyExit: boolean): void {
+    onRoundOver(roundScores: {[key: string]: number}, isEarlyExit: boolean): void {
+        if (this.state.isGameOver) {
+            throw new Error('cannot call this method when the game is already over');
+        }
+
         if (isEarlyExit && this.state.numFailedDeals < 2) {
             console.log(`round ${this.state.round} ended early`);
             this.setState({
@@ -311,74 +294,49 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
 
             if (isEarlyExit && this.state.numFailedDeals === 2) {
                 console.log('3 failed deals! Bolt!');
-                scores = this.getBoltScores();
+                roundScores = this.getBoltScores();
             } else {
-                console.log(scores);
+                console.log(roundScores);
             }
 
             console.log(`Round ${this.state.round} is over.`);
-            const newScores = Object.assign({}, this.state.scores);
+            const newScoreHistory = Object.assign({}, this.state.scores);
             console.log(this.state.scores);
 
-            for(const [name, pts] of Object.entries(scores)) {
+            for(const name of Object.keys(roundScores)) {
                 // there should be scores from the previous round
                 // but if not, set them to zero
-                if (!newScores[name][this.state.round - 1]) {
-                    newScores[name][this.state.round - 1] = 0;
+                if (!newScoreHistory[name][this.state.round - 1]) {
+                    newScoreHistory[name][this.state.round - 1] = 0;
                 }
-                newScores[name][this.state.round] = newScores[name][this.state.round - 1] + pts;
             }
 
-            // now that we've added the scores...
-            // possibly round the scores up or down depending on who is on the barrel
-            // and calculate game end conditions
+            // NOTE: no entry for this.state.round should exist for any player
 
-            // player names *previously* on the barrel
-            const playersOnBarrel = getBarrelPlayers(this.state.scores);
-            const newBarrelCounts = Object.assign({}, this.state.barrelTurnCount);
-            const winningPlayers = [] as string[];
+            // newScoreHistory[name][this.state.round] = newScoreHistory[name][this.state.round - 1] + pts;
+            const newRoundScoresFinal = updateScores(newScoreHistory, roundScores);
+            for (let player of this.state.playerNames) {
+                newScoreHistory[player][this.state.round] = newRoundScoresFinal[player];
+            }
+
+            // evaluate game-end conditions
+            const winningPlayers = [];
             let isGameOver = false;
-
-            for (let name of this.state.playerNames) {
-                const isOnBarrel = playersOnBarrel.includes(name);
-
-                if (newScores[name][this.state.round - 1] >= 880 && newScores[name][this.state.round - 1] < 1000) {
-                    // the player might get on the barrel this turn
-
-                    if (isOnBarrel && newBarrelCounts[name] === 2) {
-                        // this player gets -120 points
-                        newScores[name][this.state.round - 1] = 760;
-
-                        // and is kicked off the barrel
-                        newBarrelCounts[name] = -1;
-
-                        console.debug(`${name} has been on the barrel for a full 3 turns and has failed to meet a contract. They are thrown off.`);
-                    } else {
-                        if (!isOnBarrel) {
-                            console.debug(`${name} is now on the barrel`);
-                            console.assert(newBarrelCounts[name] === -1);
-                        } else {
-                            console.debug(`${name} has now been on the barrel for ${newBarrelCounts[name] + 1} turns`);
-                        }
-
-                        newBarrelCounts[name] += 1;
-                    }
-                } else if (newScores[name][this.state.round - 1] >= 1000) {
-                    // this player has won
-                    winningPlayers.push(name);
+            for (let player of this.state.playerNames) {
+                if (newScoreHistory[player][this.state.round] >= 1000) {
+                    console.debug(`Player ${player} has won the game`);
+                    winningPlayers.push(player);
                     isGameOver = true;
-                } else if (isOnBarrel) {
-                    // this player has fallen off the barrel
-                    newBarrelCounts[name] = -1;
-                    console.debug(`${name} has fallen off the barrel due to a contract`);
                 }
             }
 
             this.setState({
-                scores: newScores,
+                scores: newScoreHistory,
                 round: this.state.round + 1,
                 dealerIndex: (this.state.dealerIndex + 1) % 3,
                 numFailedDeals: 0,
+                winningPlayers: winningPlayers,
+                isGameOver: isGameOver,
             }, () => {
                 this.saveGameState();
             });
@@ -386,6 +344,10 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
     }
 
     handleChangePhase(newPhase: GamePhase) {
+        if (this.state.isGameOver) {
+            throw new Error('cannot call this method when the game is already over');
+        }
+
         this.setState({
             phase: newPhase,
         });
@@ -416,7 +378,7 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
     render(): JSX.Element {
         let mainView = null;
 
-        if (this.state.isGameReady) {
+        if (this.state.isGameReady && !this.state.isGameOver) {
             mainView = <LocalGameRoundView
                 randomSeed={this.state.randomSeed}
                 gameId={this.props.gameId}
@@ -428,6 +390,16 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
                 numFailedDeals={this.state.numFailedDeals}
                 localPlayerIndex={this.state.localPlayerIndex}
                 onChangePhase={this.handleChangePhase} />;
+        } else if (this.state.isGameOver) {
+            mainView = (<div>
+                <h3>Game Over!</h3>
+                <p>The game is over.</p>
+
+                <p>
+                    {this.state.winningPlayers.length === 1 ? `The winner is ${this.state.winningPlayers[0]}.` :
+                        `The winning players are ${this.state.winningPlayers.join(', ')}.`}
+                </p>
+            </div>);
         } else {
             mainView = <LoadingView />
         }

@@ -3,7 +3,7 @@
  */
 
 import { CardValue, Suit } from '../cards';
-import { ITrickCard, getWinningCard, countTrickPoints, countAllTrickPoints, Bid, getWinningBid, isBiddingComplete } from '../game-mechanics';
+import { ITrickCard, getWinningCard, countTrickPoints, countAllTrickPoints, Bid, getWinningBid, isBiddingComplete, updateScores } from '../game-mechanics';
 
 
 /**
@@ -487,6 +487,119 @@ describe('countAllTrickPoints', () => {
 
     test('handle no tricks taken', () => {
         expect(countAllTrickPoints([])).toBe(0);
+    });
+});
+
+describe('updateScores', () => {
+    test('basic update', () => {
+        const scoreHistory = {
+            'a': [0, 100],
+            'b': [0, 150],
+            'c': [0, 200],
+        };
+        const newRoundScores = {
+            'a': 10,
+            'b': 20,
+            'c': 30,
+        };
+        const newScores = updateScores(scoreHistory, newRoundScores)
+        expect(newScores['a']).toBe(110);
+        expect(newScores['b']).toBe(170);
+        expect(newScores['c']).toBe(230);
+    });
+
+    test('player should fall off the barrel after 3 turns', () => {
+        const scoreHistory = {
+            'a': [0, 100, 880, 880],
+            'b': [0, 150, 200, 250],
+            'c': [0, 200, 210, 220],
+        };
+        const newRoundScores = {
+            'a': 10,
+            'b': 20,
+            'c': 30,
+        };
+        const newScores = updateScores(scoreHistory, newRoundScores)
+        expect(newScores['a']).toBe(760);
+        expect(newScores['b']).toBe(270);
+        expect(newScores['c']).toBe(250);
+    });
+
+    test('player should win with 1000 points (rounded down) from both on and off the barrel', () => {
+        const scoreHistory = {
+            'a': [0, 800],
+            'b': [0, 880],
+            'c': [0, 200],
+        };
+        const newRoundScores = {
+            'a': 210,
+            'b': 130,
+            'c': 30,
+        };
+        const newScores = updateScores(scoreHistory, newRoundScores)
+        expect(newScores['a']).toBe(1000);
+        expect(newScores['b']).toBe(1000);
+        expect(newScores['c']).toBe(230);
+    });
+
+    test('player can win on their last turn on the barrel', () => {
+        const scoreHistory = {
+            'a': [0, 880, 880],
+            'b': [0, 100, 200],
+            'c': [0, 150, 200],
+        };
+        const newRoundScores = {
+            'a': 120,
+            'b': 20,
+            'c': 30,
+        };
+        const newScores = updateScores(scoreHistory, newRoundScores)
+        expect(newScores['a']).toBe(1000);
+        expect(newScores['b']).toBe(220);
+        expect(newScores['c']).toBe(230);
+    });
+
+    test('players can get on and stay on the barrel', () => {
+        const scoreHistory = {
+            'a': [0, 880],
+            'b': [0, 850],
+            'c': [0, 300],
+        };
+        const newRoundScores = {
+            'a': 50,
+            'b': 50,
+            'c': 20,
+        };
+        const newScores = updateScores(scoreHistory, newRoundScores)
+        expect(newScores['a']).toBe(880);
+        expect(newScores['b']).toBe(880);
+        expect(newScores['c']).toBe(320);
+    });
+
+    test('when a player falls off barrel due to a failed contract they receive the right penalty', () => {
+        const scoreHistory = {
+            // on the barrel for 2 turns
+            'a': [0, 880, 880],
+            // on the barrel for 1 turn
+            'b': [0, 880],
+            // on the barrel for 2 turns
+            'c': [0, 880, 880],
+        };
+        const newRoundScores = {
+            // minor penalty
+            'a': -50,
+            // minor penalty
+            'b': -50,
+            // major penalty
+            'c': -140,
+        };
+        const newScores = updateScores(scoreHistory, newRoundScores)
+        // should receive -120
+        expect(newScores['a']).toBe(760);
+        // should receive -50
+        expect(newScores['b']).toBe(830);
+        // should receive -140
+        expect(newScores['c']).toBe(740);
     });
 });
 

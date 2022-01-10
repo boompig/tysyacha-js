@@ -330,17 +330,113 @@ export function computeRoundScores(
 }
 
 /**
+ * Given the history of the scores, return a map from the player names to their current scores
+ */
+export function getLatestScores(scoreHistory: {[key: string]: number[]}): {[key: string]: number} {
+    const scores = {} as {[key: string]: number};
+    for (let [playerName, playerScores] of Object.entries(scoreHistory)) {
+        scores[playerName] = playerScores[playerScores.length - 1];
+    }
+    return scores;
+}
+
+/**
  * Return the name of any players currently on the barrel
  */
-export function getBarrelPlayers(scores: {[key: string]: number[]}): string[] {
+export function getBarrelPlayers(scores: {[key: string]: number}): string[] {
     const barrelPlayers = [] as string[];
-    Object.entries(scores).forEach(([playerName, scoresArr]) => {
-        const l = scoresArr.length;
-        if (scoresArr[l - 1] === 880) {
+    Object.entries(scores).forEach(([playerName, playerScore]) => {
+        if (playerScore >= 880 && playerScore < 1000) {
             barrelPlayers.push(playerName);
         }
     });
     return barrelPlayers;
+}
+
+export function getBarrelTurnCounts(scoreHistory: {[key: string]: number[]}): {[key: string]: number} {
+    const barrelTurnCounts = {} as {[key: string]: number};
+
+    Object.entries(scoreHistory).forEach(([playerName, playerScores]) => {
+        let count = 0;
+        // start with most recent turn
+        let i = playerScores.length - 1;
+
+        while ((playerScores[i] >= 880 && playerScores[i] < 1000) && i >= 0) {
+            // the player was on the barrel on turn i
+            count++;
+            i--;
+        }
+        barrelTurnCounts[playerName] = count;
+    });
+    return barrelTurnCounts;
+}
+
+/**
+ * Return the number of completed rounds in the score history
+ */
+export function getRoundsComplete(scoreHistory: {[key: string]: number[]}): number {
+    for (let scores of Object.values(scoreHistory)) {
+        return scores.length - 1;
+    }
+    throw new Error('no players in score history');
+}
+
+/**
+ * Update the player scores given the new scores for the round and other related information
+ * The round scores should already take into account the contract, etc.
+ *
+ * @param scoreHistory - includes history of scores not including this most recent turn. Each entry is cumulative.
+ * This method is guaranteed to *not* modify scoreHistory
+ *
+ * @returns The scores for the latest round we are computing. Up to the caller to insert this correctly into the score history
+ */
+export function updateScores(scoreHistory: { [key: string]: number[] }, newRoundScores: { [key: string]: number }): { [key: string]: number } {
+    const newScores = {} as {[key: string]: number};
+    const lastRoundScores = getLatestScores(scoreHistory);
+    const barrelTurnCounts = getBarrelTurnCounts(scoreHistory);
+
+    for (let player of Object.keys(newRoundScores)) {
+        // tentatively compute the player's new score
+        newScores[player] = lastRoundScores[player] + newRoundScores[player];
+
+        if (barrelTurnCounts[player] > 0) {
+            if (newScores[player] >= 1000) {
+                // round it down to 1000
+                newScores[player] = 1000;
+                // console.debug(`[updateScores] player ${player} has won after being on the barrel`);
+            } else if (barrelTurnCounts[player] === 2 && newScores[player] >= 880) {
+                // player was already on the barrel for 2 turns and their new score puts them on the barrel again
+                // NOTE: the score is <1000
+                console.assert(lastRoundScores[player] === 880);
+                newScores[player] = lastRoundScores[player] - 120;
+                // console.debug(`[updateScores] player ${player} has been on the barrel for 3 turns and is thrown off`);
+            } else if (barrelTurnCounts[player] === 2 && newScores[player] < 880) {
+                // player was already on the barrel for 2 turns but their new score throws them off the barrel
+                newScores[player] = Math.min(lastRoundScores[player] - 120, newScores[player]);
+                // console.debug(`[updateScores] player ${player} is thrown off the barrel after receiving a negative`);
+            } else if (newScores[player] >= 880 && newScores[player] < 1000) {
+                // player continues to be on the barrel
+                newScores[player] = 880;
+                // console.debug(`[updateScores] player ${player} is still on the barrel`);
+            }
+
+            // in all other cases, our player gets kicked off the barrel
+        } else {
+            // player was not on the barrel last turn
+            // can just add the score in a straightforward manner
+            if (newScores[player] >= 1000) {
+                // round it down to 1000
+                newScores[player] = 1000;
+                // console.debug(`[updateScores] player ${player} has won the game`);
+            } else if (newScores[player] >= 880 && newScores[player] < 1000) {
+                // round it down to 880
+                newScores[player] = 880;
+                // console.debug(`[updateScores] player ${player} is now on the barrel`);
+            }
+        }
+    }
+
+    return newScores;
 }
 
 export type TCards = {[key: string]: Hand};

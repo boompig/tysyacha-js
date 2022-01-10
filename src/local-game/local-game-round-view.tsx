@@ -81,6 +81,7 @@ interface ISavedRoundState {
 
 /**
  * This is the game.
+ * DO NOT show this view if the game is over.
  */
 export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRoundState> {
     constructor(props: ITestRoundProps) {
