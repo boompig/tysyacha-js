@@ -59,6 +59,23 @@ form button {
     margin-top: .5rem;
 }
 
+.landing-view .game-type-selector button {
+    width: 250px;
+}
+
+#game-type-btn-container {
+    margin-top: .5rem;
+    width: 100%;
+}
+
+#game-type-btn-container label {
+    width: 45%;
+}
+
+.landing-view .vs-human-view {
+    padding-top: .8rem;
+}
+
 .lang-select-container {
     display: flex;
     flex-direction: row-reverse;

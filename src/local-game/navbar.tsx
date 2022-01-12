@@ -39,7 +39,7 @@ const Navbar: FC<IProps> = (props: IProps) => {
     }
 
     return (<nav className="navbar navbar-expand-md navbar-light bg-light" id="tysyacha-navbar">
-        <a className="navbar-brand" href="#" onClick={handleClick}>Tysyacha</a>
+        <a className="navbar-brand" href="#landing" onClick={handleClick}>Tysyacha</a>
 
         <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
             aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">

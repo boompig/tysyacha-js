@@ -2,6 +2,7 @@ import React, { FC, useState } from "react";
 import "./landing-view.css";
 import { randInt } from "../utils";
 import { Navbar } from "../local-game/navbar";
+import RadioButtonGroup from "../radio-button-group";
 
 
 /**
@@ -39,9 +40,7 @@ function randomGameId(): string {
 function findExistingActiveGames(): { [key: string]: any } {
     const pattern = /game:[a-z0-9]+$/;
     const gameIds = Object.keys(window.localStorage).filter((key: string) => {
-        if (key.match(pattern)) {
-            return true;
-        }
+        return key.match(pattern);
     }).map((key: string) => {
         return key.replace('game:', '');
     });
@@ -91,6 +90,9 @@ interface IExistingGamesViewProps {
     joinGame(gameId: string): void;
 };
 
+/**
+ * Select a currently active game to join (these games are vs the AI)
+ */
 const ActiveGamesView : FC <IExistingGamesViewProps> = (props: IExistingGamesViewProps) => {
     const arr = Object.entries(props.games).map(([gameId, gameDetails]) => {
         return <li key={gameId}>
@@ -103,6 +105,60 @@ const ActiveGamesView : FC <IExistingGamesViewProps> = (props: IExistingGamesVie
             { arr }
         </ul>
     </div>;
+};
+
+interface IVsHumanViewProps {
+    onJoinGame(gameId: string): void;
+    onNewGame(): void;
+};
+
+const VsHumanView: FC<IVsHumanViewProps> = (props: IVsHumanViewProps) => {
+    /**
+     * Either 'host' or 'join'
+     */
+    let [gameType, setGameType] = useState('host');
+
+    return <div className="vs-human-view">
+        <p>You can either host a new game or join your friends in their existing game.
+        </p>
+
+        <button type="button" className="btn btn-primary btn-lg">Host a New Game</button>
+
+        { gameType === 'join' ?
+            <p>
+                If you're joining your friends, ask them for their game ID.
+            </p> :
+            null }
+
+        <form>
+            <label htmlFor="game_id">Game ID</label>
+            <input type="text" name="game_id" className="form-control"
+                placeholder="game ID"
+                required={true}/>
+            <button type="submit" className="btn btn-primary btn-lg">Join Game</button>
+        </form>
+
+    </div>;
+};
+
+interface ILangSelectorViewProps {
+    onChangeLang(lang: string): void;
+}
+
+/**
+ * TODO not implemeneted
+ */
+const LangSelectorView = (props: ILangSelectorViewProps) => {
+    return <div className="lang-select-container">
+        <div className="lang-select-option" role="button" onClick={() => props.onChangeLang('ru')}>
+            <img className="lang-select-flag" src="/img/Flag_of_Russia.svg.png" height="40px" alt="Russian flag" />
+            <div className="lang-select-name">Russian</div>
+        </div>
+        <div className="lang-select-option" role="button" onClick={() => props.onChangeLang('en')}>
+            <img className="lang-select-flag" src="/img/Flag_of_UK.svg.png" height="40px" alt="UK flag" />
+            <div className="lang-select-name">English</div>
+        </div>
+    </div>
 };
 
 interface ILandingViewProps {
@@ -123,44 +179,54 @@ const LandingView : FC <ILandingViewProps> = (props: ILandingViewProps) => {
     }
     let [lang, setLang] = useState(urlLang ? urlLang : 'en');
     const activeGames = findExistingActiveGames();
+    /**
+     * Whether to show the *list* of active games
+     */
     let [showActiveGames, setShowActiveGames] = useState(false);
+    /**
+     * Whether to show the *alert* that active games may be joined
+     */
+    let [showActiveGamesAlert, setShowActiveGamesAlert] = useState(Object.keys(activeGames).length > 0);
+
+    let [playerName, setName] = useState('');
+    let [gameType, setGameType] = useState('ai');
+
+    function handleChangeName(e: React.SyntheticEvent<HTMLInputElement>) {
+        const name = (e.target as HTMLInputElement).value;
+        setName(name);
+    }
 
     /**
-     * Callback to join a new game (vs AI)
+     * Callback to create a new game (vs AI)
+     * Name is set here
      */
-    function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
-        e.preventDefault();
-
+    function handleNewAIGame() {
         // generate a unique random game ID
         const gameId = randomGameId();
         // navigate to the right page
         const url = new URL(window.location.href);
         url.hash = '#local-ai-game';
         url.searchParams.set('gameId', gameId.toString());
-        const playerName = (e.target as any).playerName.value;
         url.searchParams.set('playerName', playerName);
-
-        // set the language
         url.searchParams.set('lang', lang);
-
         window.location.href = url.toString();
-        return false;
     }
 
-    function changeLang(langName: string) {
+    function handleChangeLang(langName: string) {
         const url = new URL(window.location.href);
         url.searchParams.set('lang', langName);
         window.location.href = url.toString();
     }
 
     /**
-     * Callback for when we want to join an existing game
+     * Callback for when we want to join an existing game vs AI
      */
-    function handleJoinGame(gameId: string) {
+    function handleJoinAIGame(gameId: string) {
         const gameDetails = getGameDetails(gameId);
         const url = new URL(window.location.href);
         url.hash = '#local-ai-game';
         url.searchParams.set('gameId', gameId);
+        // NOTE: we *must* set the player name to what is recorded in our local DB
         const playerNames = gameDetails.playerNames as string[];
         const localPlayerIndex = gameDetails.localPlayerIndex as number;
         const playerName = playerNames[localPlayerIndex];
@@ -172,56 +238,94 @@ const LandingView : FC <ILandingViewProps> = (props: ILandingViewProps) => {
         window.location.href = url.toString();
     }
 
-    let playExistingGamesView = null;
-    if (Object.keys(activeGames).length > 0) {
-        playExistingGamesView = (<div className="join-existing-games-container">
+    function handleJoinHumanGame(gameId: string) {
+        const url = new URL(window.location.href);
+        url.hash = '#human-game';
+        url.searchParams.set('gameId', gameId);
+        url.searchParams.set('playerName', playerName);
+        url.searchParams.set('lang', lang);
+        window.location.href = url.toString();
+    }
+
+    /**
+     * Callback to create (host) a new game vs humans
+     */
+    function handleNewHumanGame() {
+         // generate a unique random game ID
+        const gameId = randomGameId();
+        // navigate to the right page
+        const url = new URL(window.location.href);
+        url.hash = '#human-game';
+        url.searchParams.set('gameId', gameId.toString());
+        url.searchParams.set('playerName', playerName);
+        url.searchParams.set('lang', lang);
+        window.location.href = url.toString();
+    }
+
+    let existingGamesAlert = null;
+    if (showActiveGamesAlert) {
+        existingGamesAlert = (<div className="join-existing-games-container alert alert-warning alert-dismissible fade show" role="alert">
+            <button type="button" className="close" data-dismiss="alert" aria-label="Close" onClick={() => setShowActiveGamesAlert(false)}>
+                <span aria-hidden="true">&times;</span>
+            </button>
+
             <p>You have { Object.keys(activeGames).length } games in progress. Would you like to join one?</p>
-            <button type="button" className="btn btn-info btn-lg" onClick={ () => setShowActiveGames(true) }>Continue Active Games</button>
+            <button type="button" className="btn btn-warning btn-lg" onClick={ () => setShowActiveGames(true) }>Continue Active Games</button>
         </div>);
     }
+
+    let mainView = (<div>
+        <p className="instructions">
+            You can play the Russian card game Tysyacha here against other humans or sophisticated AI opponents.
+            Enter your name below to begin.
+        </p>
+        <form className="player-name-form">
+            <label htmlFor="name">Your Name</label>
+            <input type="text" className="form-control"
+                name="playerName"
+                placeholder="enter your name to continue"
+                required={true}
+                onChange={handleChangeName}
+            />
+
+            <RadioButtonGroup
+                radioName="game_type"
+                containerId="game-type-btn-container"
+                humanLabels={['vs AI', 'vs Human']}
+                labels={['ai', 'human']}
+                disabledLabels={['human']}
+                checkedLabel={gameType}
+                onChange={setGameType} />
+
+            { gameType === 'ai' ?
+                <button type="button" className="btn btn-lg btn-primary form-control"
+                    onClick={() => handleNewAIGame()}>Play Game vs AI</button> :
+                null }
+        </form>
+
+        {gameType === 'human' ?
+            <VsHumanView
+                onJoinGame={handleJoinHumanGame}
+                onNewGame={handleNewHumanGame} /> :
+            null}
+    </div>);
 
     return (<div className="wrapper landing-view">
         <Navbar
             setNavHash={props.onNewRoute} />
         <div className="hero">
-            {/* <div className="lang-select-container"> */}
-                {/* <div className="lang-select-option" role="button" onClick={ () => changeLang('ru') }>
-                    <img className="lang-select-flag" src="/img/Flag_of_Russia.svg.png" height="40px" alt="Russian flag" />
-                    <div className="lang-select-name">Russian</div>
-                </div> */}
-                {/* <div className="lang-select-option" role="button" onClick={ () => changeLang('en') }>
-                    <img className="lang-select-flag" src="/img/Flag_of_UK.svg.png" height="40px" alt="UK flag" />
-                    <div className="lang-select-name">English</div>
-                </div>
-            </div> */}
             <h1 className="title-text">1000!</h1>
         </div>
         <main>
-            <h1>Welcome to the Tysyacha Web App
-                { // 'Приветствую вас в Игру "Тысячя"'
-                }
-            </h1>
+            <h1>Welcome to the Tysyacha Web App</h1>
 
-            { showActiveGames ? null : playExistingGamesView }
+            { showActiveGames ? null : existingGamesAlert }
             { showActiveGames ?
                 <ActiveGamesView games={ activeGames }
-                    joinGame={handleJoinGame} /> : null
+                    joinGame={handleJoinAIGame} /> : null
             }
 
-            <p className="instructions">
-                You can play the Russian card game Tysyacha here against sophisticated AI opponents.
-                Enter your name below to begin.
-            </p>
-
-            <form onSubmit={handleSubmit}>
-                <label htmlFor="name">Your Name</label>
-                <input type="text" className="form-control"
-                    name="playerName"
-                    placeholder="enter your name to continue"
-                    />
-                <button type="submit" className="btn btn-lg btn-primary form-control">Play</button>
-            </form>
-
+            { mainView }
         </main>
 
         <footer>
