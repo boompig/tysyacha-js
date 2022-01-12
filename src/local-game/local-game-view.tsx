@@ -2,7 +2,7 @@ import React, { PureComponent } from "react";
 import { LocalGameRoundView } from "./local-game-round-view";
 import { ScoreView } from "./score-view-modal";
 import "./local-game.css";
-import { GamePhase, getBarrelPlayers, updateScores } from "../game-mechanics";
+import { GamePhase, updateScores } from "../game-mechanics";
 import { Navbar } from "./navbar";
 import { LoadingView } from "./loading-view";
 import { randInt } from "../utils";

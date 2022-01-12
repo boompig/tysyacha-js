@@ -270,6 +270,8 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
         const isMarriage = doesPlayedCardDeclareMarriage(activePlayerHand, cardIndex, this.state.currentTrick, this.state.trickNumber);
         if (!isMarriage && trickCard.isMarriage) {
             throw new Error('player is telling us this is a marriage but we are not seeing it');
+        } else if (isMarriage && !trickCard.isMarriage) {
+            throw new Error('game mechanics are telling us this is a marriage the player is saying it is not');
         } else if (isMarriage) {
             console.debug(`${playerName} declared a marriage -> ${card.suit}`);
         }

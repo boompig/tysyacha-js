@@ -380,11 +380,15 @@ export function getBarrelPlayers(scores: {[key: string]: number}): string[] {
     return barrelPlayers;
 }
 
+/**
+ * Return the number of turns that a player has been on the barrel (not including any unscored turns)
+ * -1 means the player is not on the barrel
+ */
 export function getBarrelTurnCounts(scoreHistory: {[key: string]: number[]}): {[key: string]: number} {
     const barrelTurnCounts = {} as {[key: string]: number};
 
     Object.entries(scoreHistory).forEach(([playerName, playerScores]) => {
-        let count = 0;
+        let count = -1;
         // start with most recent turn
         let i = playerScores.length - 1;
 

@@ -548,9 +548,9 @@ describe('updateScores', () => {
 
     test('player should fall off the barrel after 3 turns', () => {
         const scoreHistory = {
-            'a': [0, 100, 880, 880],
-            'b': [0, 150, 200, 250],
-            'c': [0, 200, 210, 220],
+            'a': [0, 100, 880, 880, 880],
+            'b': [0, 150, 200, 210, 250],
+            'c': [0, 200, 210, 210, 220],
         };
         const newRoundScores = {
             'a': 10,
@@ -565,7 +565,9 @@ describe('updateScores', () => {
 
     test('player should win with 1000 points (rounded down) from both on and off the barrel', () => {
         const scoreHistory = {
+            // not on the barrel
             'a': [0, 800],
+            // on the barrel
             'b': [0, 880],
             'c': [0, 200],
         };
@@ -582,9 +584,10 @@ describe('updateScores', () => {
 
     test('player can win on their last turn on the barrel', () => {
         const scoreHistory = {
-            'a': [0, 880, 880],
-            'b': [0, 100, 200],
-            'c': [0, 150, 200],
+            // on the barrel for 2 turns
+            'a': [0, 880, 880, 880],
+            'b': [0, 100, 200, 200],
+            'c': [0, 150, 180, 200],
         };
         const newRoundScores = {
             'a': 120,
@@ -616,12 +619,12 @@ describe('updateScores', () => {
 
     test('when a player falls off barrel due to a failed contract they receive the right penalty', () => {
         const scoreHistory = {
-            // on the barrel for 2 turns
-            'a': [0, 880, 880],
-            // on the barrel for 1 turn
-            'b': [0, 880],
-            // on the barrel for 2 turns
-            'c': [0, 880, 880],
+            // on the barrel for 2 turns (not including this one)
+            'a': [0, 880, 880, 880],
+            // on the barrel for 1 turn (not including this one)
+            'b': [0, 200, 880, 880],
+            // on the barrel for 2 turns (not including this one)
+            'c': [0, 880, 880, 880],
         };
         const newRoundScores = {
             // minor penalty
