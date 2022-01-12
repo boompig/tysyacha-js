@@ -33,21 +33,43 @@ function randomGameId(): string {
 
 /**
  * Find games that are stored against in this browser
- * Return their game IDs
+ * Do not return any games which have been completed
+ * Return a map from game IDs to game details
  */
-function findExistingGames(): string[] {
+function findExistingActiveGames(): { [key: string]: any } {
     const pattern = /game:[a-z0-9]+$/;
-    return Object.keys(window.localStorage).filter((key: string) => {
+    const gameIds = Object.keys(window.localStorage).filter((key: string) => {
         if (key.match(pattern)) {
             return true;
         }
     }).map((key: string) => {
         return key.replace('game:', '');
     });
+
+    console.debug(`Found ${gameIds.length} game IDs`);
+
+    const m = {} as {[key: string]: any};
+    gameIds.forEach((gameId: string) => {
+        m[gameId] = getGameDetails(gameId);
+    });
+
+    let numGameOver = 0;
+
+    for (let gameId of Object.keys(m)) {
+        if (m[gameId].isGameOver) {
+            delete(m[gameId]);
+            numGameOver++;
+        }
+    }
+
+    console.debug(`${numGameOver} of those are done`);
+
+    return m;
 }
 
 /**
  * Guaranteed to return *at least* `localPlayerIndex` and `playerNames`
+ * Also guaranteed to have key `isGameOver`
  */
 function getGameDetails(gameId: string): any {
     const sGameDetails = window.localStorage.getItem(`game:${gameId}`);
@@ -65,14 +87,14 @@ function getGameDetails(gameId: string): any {
 const SUPPORTED_LANGS = ['en'];
 
 interface IExistingGamesViewProps {
-    gameIds: string[];
+    games: {[key: string]: any};
     joinGame(gameId: string): void;
 };
 
-const ExistingGamesView : FC <IExistingGamesViewProps> = (props: IExistingGamesViewProps) => {
-    const arr = props.gameIds.map((gameId: string) => {
+const ActiveGamesView : FC <IExistingGamesViewProps> = (props: IExistingGamesViewProps) => {
+    const arr = Object.entries(props.games).map(([gameId, gameDetails]) => {
         return <li key={gameId}>
-            <a href="#" role="button" onClick={() => props.joinGame(gameId) }>{ gameId }</a>
+            <a href="#" role="button" onClick={() => props.joinGame(gameId) }>{ gameId } ({ gameDetails.round } rounds complete)</a>
         </li>;
     });
     return <div className="existing-games-container">
@@ -100,8 +122,8 @@ const LandingView : FC <ILandingViewProps> = (props: ILandingViewProps) => {
         throw new Error(`Language ${urlLang} is not yet supported`);
     }
     let [lang, setLang] = useState(urlLang ? urlLang : 'en');
-    const existingGames = findExistingGames();
-    let [showExistingGames, setShowExistingGames] = useState(false);
+    const activeGames = findExistingActiveGames();
+    let [showActiveGames, setShowActiveGames] = useState(false);
 
     /**
      * Callback to join a new game (vs AI)
@@ -151,10 +173,10 @@ const LandingView : FC <ILandingViewProps> = (props: ILandingViewProps) => {
     }
 
     let playExistingGamesView = null;
-    if (existingGames.length > 0) {
+    if (Object.keys(activeGames).length > 0) {
         playExistingGamesView = (<div className="join-existing-games-container">
-            <p>You have { existingGames.length } games in progress. Would you like to join one?</p>
-            <button type="button" className="btn btn-info btn-lg" onClick={ () => setShowExistingGames(true) }>Continue Existing Games</button>
+            <p>You have { Object.keys(activeGames).length } games in progress. Would you like to join one?</p>
+            <button type="button" className="btn btn-info btn-lg" onClick={ () => setShowActiveGames(true) }>Continue Active Games</button>
         </div>);
     }
 
@@ -180,9 +202,9 @@ const LandingView : FC <ILandingViewProps> = (props: ILandingViewProps) => {
                 }
             </h1>
 
-            { showExistingGames ? null : playExistingGamesView }
-            { showExistingGames ?
-                <ExistingGamesView gameIds={ existingGames }
+            { showActiveGames ? null : playExistingGamesView }
+            { showActiveGames ?
+                <ActiveGamesView games={ activeGames }
                     joinGame={handleJoinGame} /> : null
             }
 
