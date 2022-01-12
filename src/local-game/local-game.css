@@ -65,6 +65,7 @@
         position: absolute;
         bottom: 0;
         width: 90%;
+        max-width: 1300px;
         padding-bottom: 1rem;
     }
 }
@@ -172,8 +173,9 @@
 }
 
 .trick-taking-view .current-trick-wrapper {
-    position: absolute;
-    top: 35vh;
+    /* position: absolute; */
+    /* top: 35vh; */
+    padding-top: 1rem;
     width: 90%;
     /* max-width: 800px; */
     /* margin: 0 auto; */

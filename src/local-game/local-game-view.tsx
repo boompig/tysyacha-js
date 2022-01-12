@@ -291,20 +291,15 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
                 console.log(`number of failed deals is now ${this.state.numFailedDeals}`);
                 this.saveGameState();
             });
+        } else if (isEarlyExit && this.state.numFailedDeals === 2) {
+            console.log('3 failed deals! Bolt!');
+            roundScores = this.getBoltScores();
         } else {
             // current round must be at least 1
             console.assert(this.state.round > 0);
+            console.debug(`Round ${this.state.round} is over.`);
 
-            if (isEarlyExit && this.state.numFailedDeals === 2) {
-                console.log('3 failed deals! Bolt!');
-                roundScores = this.getBoltScores();
-            } else {
-                console.log(roundScores);
-            }
-
-            console.log(`Round ${this.state.round} is over.`);
             const newScoreHistory = Object.assign({}, this.state.scores);
-            console.log(this.state.scores);
 
             for(const name of Object.keys(roundScores)) {
                 // there should be scores from the previous round
@@ -314,9 +309,6 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
                 }
             }
 
-            // NOTE: no entry for this.state.round should exist for any player
-
-            // newScoreHistory[name][this.state.round] = newScoreHistory[name][this.state.round - 1] + pts;
             const newRoundScoresFinal = updateScores(newScoreHistory, roundScores);
             for (let player of this.state.playerNames) {
                 newScoreHistory[player][this.state.round] = newRoundScoresFinal[player];
@@ -346,13 +338,45 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
         }
     }
 
-    handleChangePhase(newPhase: GamePhase) {
+    /**
+     * Child component calls this method when the phase has changed
+     * We can use this to update the scores as soon as they become available (rather than at the end of the round)
+     */
+    handleChangePhase(newPhase: GamePhase, roundScores?: { [key: string]: number }) {
         if (this.state.isGameOver) {
             throw new Error('cannot call this method when the game is already over');
         }
 
+        // stay the same in most cases
+        let newScoreHistory = this.state.scores;
+
+        if (newPhase === GamePhase.SCORING && roundScores) {
+            console.debug('Updating scores in scoring phase');
+
+            // we know it's not an early exit
+            console.assert(this.state.round > 0);
+
+            // set the scores for this round
+            newScoreHistory = Object.assign({}, this.state.scores);
+
+            for(const name of Object.keys(roundScores)) {
+                // there should be scores from the previous round
+                // but if not, set them to zero
+                if (!newScoreHistory[name][this.state.round - 1]) {
+                    newScoreHistory[name][this.state.round - 1] = 0;
+                }
+            }
+
+            const newRoundScoresFinal = updateScores(newScoreHistory, roundScores);
+            for (let player of this.state.playerNames) {
+                newScoreHistory[player][this.state.round] = newRoundScoresFinal[player];
+            }
+        }
+
         this.setState({
             phase: newPhase,
+            // NOTE: do not update the round here
+            scores: newScoreHistory,
         });
     }
 
@@ -415,7 +439,8 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
                 </div>
                 { this.state.isScorecardShown ?
                     <div>
-                        <ScoreView currentRound={this.state.round}
+                        {/* in the scoring phase we can preview the scores for the *current* round rather than the previous round */}
+                        <ScoreView currentRound={this.state.phase === GamePhase.SCORING ? this.state.round + 1 : this.state.round}
                             playerNames={this.state.playerNames}
                             scores={this.state.scores}
                             onDismiss={() => this.handleChangeViewScorecard(false)} />

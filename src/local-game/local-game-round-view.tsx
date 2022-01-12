@@ -2,7 +2,7 @@ import React, { PureComponent } from "react";
 import "../card.css";
 import { Card, Deck, Hand, Suit } from "../cards";
 import { DistributeCardsView } from "./distribute-cards-view";
-import { Bid, GamePhase, getWinningCard, ITrickCard, doesPlayedCardDeclareMarriage } from "../game-mechanics";
+import { Bid, GamePhase, getWinningCard, ITrickCard, doesPlayedCardDeclareMarriage, computeRoundScores } from "../game-mechanics";
 import { RoundScoringView } from "../local-components/round-scoring-view";
 import { BiddingView } from "./bidding-view";
 import { RevealTreasureView } from "./reveal-treasure-view";
@@ -34,7 +34,10 @@ interface ITestRoundProps {
      */
     numFailedDeals: number;
     onRoundOver: (scores: {[key: string]: number}, isEarlyExit: boolean) => any;
-    onChangePhase(phase: GamePhase): void;
+    /**
+     * Once the scores for the round are available, provide them to the parent view
+     */
+    onChangePhase(phase: GamePhase, roundScores?: {[key: string]: number}): void;
 }
 
 interface ILocalRoundState {
@@ -332,19 +335,35 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
         const winningPlayerName = this.props.playerNames[winningPlayerIndex];
         pastTricks[winningPlayerName].push(this.state.currentTrick);
         console.log(`[trick ${this.state.trickNumber}] ${winningPlayerName} won the trick. They play the next hand.`);
-        let isDone = false;
+        let isPlayingPhaseOver = false;
 
         if (this.state.playerHands[winner.player].cards.length === 0) {
             // we're done
-            isDone = true;
+            isPlayingPhaseOver = true;
         }
 
         this.setState({
             currentTrick: [],
             activePlayerIndex: winningPlayerIndex,
             tricksTaken: pastTricks,
-            phase: isDone ? GamePhase.SCORING : GamePhase.PLAYING,
+            phase: isPlayingPhaseOver ? GamePhase.SCORING : GamePhase.PLAYING,
             trickNumber: this.state.trickNumber + 1,
+        }, () => {
+            if (isPlayingPhaseOver) {
+                if (!this.state.currentContract) {
+                    throw new Error('current contract may not be null here');
+                }
+
+                // get the new round scores
+                const roundScores = computeRoundScores(
+                    this.props.playerNames,
+                    this.state.tricksTaken,
+                    this.state.declaredMarriages,
+                    this.state.currentContract,
+                );
+
+                this.props.onChangePhase(GamePhase.SCORING, roundScores.final);
+            }
         });
     }
 
