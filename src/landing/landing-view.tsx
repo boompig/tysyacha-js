@@ -3,7 +3,6 @@ import "./landing-view.css";
 import { randInt } from "../utils";
 import { Navbar } from "../local-game/navbar";
 
-interface IProps {};
 
 /**
  * Game IDs with this many characters will be generated
@@ -33,16 +32,64 @@ function randomGameId(): string {
 }
 
 /**
+ * Find games that are stored against in this browser
+ * Return their game IDs
+ */
+function findExistingGames(): string[] {
+    const pattern = /game:[a-z0-9]+$/;
+    return Object.keys(window.localStorage).filter((key: string) => {
+        if (key.match(pattern)) {
+            return true;
+        }
+    }).map((key: string) => {
+        return key.replace('game:', '');
+    });
+}
+
+/**
+ * Guaranteed to return *at least* `localPlayerIndex` and `playerNames`
+ */
+function getGameDetails(gameId: string): any {
+    const sGameDetails = window.localStorage.getItem(`game:${gameId}`);
+    if (!sGameDetails) {
+        throw new Error(`game details for game ${gameId} not found`);
+    }
+    const gameDetails = JSON.parse(sGameDetails);
+    return gameDetails;
+}
+
+/**
  * Only these languages are supported
  * If any other language is passed via the query parameter, the page will refuse to render
  */
 const SUPPORTED_LANGS = ['en'];
 
+interface IExistingGamesViewProps {
+    gameIds: string[];
+    joinGame(gameId: string): void;
+};
+
+const ExistingGamesView : FC <IExistingGamesViewProps> = (props: IExistingGamesViewProps) => {
+    const arr = props.gameIds.map((gameId: string) => {
+        return <li key={gameId}>
+            <a href="#" role="button" onClick={() => props.joinGame(gameId) }>{ gameId }</a>
+        </li>;
+    });
+    return <div className="existing-games-container">
+        <p>Click which game you want to rejoin.</p>
+        <ul>
+            { arr }
+        </ul>
+    </div>;
+};
+
+interface ILandingViewProps {};
+
 /**
  * Land on this page when you go to the index
  * Language is handled through a URL query parameter
  */
-const LandingView : FC <IProps> = (props: IProps) => {
+const LandingView : FC <ILandingViewProps> = (props: ILandingViewProps) => {
     // read the language from the query parameter
     // by default, default to english
     const url = new URL(window.location.href);
@@ -51,7 +98,12 @@ const LandingView : FC <IProps> = (props: IProps) => {
         throw new Error(`Language ${urlLang} is not yet supported`);
     }
     let [lang, setLang] = useState(urlLang ? urlLang : 'en');
+    const existingGames = findExistingGames();
+    let [showExistingGames, setShowExistingGames] = useState(false);
 
+    /**
+     * Callback to join a new game (vs AI)
+     */
     function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
         e.preventDefault();
 
@@ -86,6 +138,33 @@ const LandingView : FC <IProps> = (props: IProps) => {
         window.location.reload();
     }
 
+    /**
+     * Callback for when we want to join an existing game
+     */
+    function handleJoinGame(gameId: string) {
+        const gameDetails = getGameDetails(gameId);
+        const url = new URL(window.location.href);
+        url.hash = '#local-ai-game';
+        url.searchParams.set('gameId', gameId);
+        const playerNames = gameDetails.playerNames as string[];
+        const localPlayerIndex = gameDetails.localPlayerIndex as number;
+        const playerName = playerNames[localPlayerIndex];
+        url.searchParams.set('playerName', playerName);
+
+        // set the language
+        url.searchParams.set('lang', lang);
+
+        window.location.href = url.toString();
+    }
+
+    let playExistingGamesView = null;
+    if (existingGames.length > 0) {
+        playExistingGamesView = (<div className="join-existing-games-container">
+            <p>You have { existingGames.length } games in progress. Would you like to join one?</p>
+            <button type="button" className="btn btn-info btn-lg" onClick={ () => setShowExistingGames(true) }>Continue Existing Games</button>
+        </div>);
+    }
+
     return (<div className="wrapper landing-view">
         <Navbar
             hash={window.location.hash}
@@ -108,6 +187,12 @@ const LandingView : FC <IProps> = (props: IProps) => {
                 { // 'Приветствую вас в Игру "Тысячя"'
                 }
             </h1>
+
+            { showExistingGames ? null : playExistingGamesView }
+            { showExistingGames ?
+                <ExistingGamesView gameIds={ existingGames }
+                    joinGame={handleJoinGame} /> : null
+            }
 
             <p className="instructions">
                 You can play the Russian card game Tysyacha here against sophisticated AI opponents.

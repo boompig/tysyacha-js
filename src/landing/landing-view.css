@@ -38,8 +38,13 @@ main {
     margin: 0 auto;
 }
 
+main .join-existing-games-container,
 .instructions {
     font-size: 1.1rem;
+}
+
+main .join-existing-games-container {
+    padding-bottom: 1rem;
 }
 
 form input {
