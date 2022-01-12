@@ -2,8 +2,8 @@
  * Test various game mechanics
  */
 
-import { CardValue, Suit } from '../cards';
-import { ITrickCard, getWinningCard, countTrickPoints, countAllTrickPoints, Bid, getWinningBid, isBiddingComplete, updateScores } from '../game-mechanics';
+import { Card, CardValue, Hand, Suit } from '../cards';
+import { ITrickCard, getWinningCard, countTrickPoints, countAllTrickPoints, Bid, getWinningBid, isBiddingComplete, updateScores, doesPlayedCardDeclareMarriage } from '../game-mechanics';
 
 
 /**
@@ -232,6 +232,44 @@ describe('isBiddingComplete', () => {
             },
         ] as Bid[];
         expect(isBiddingComplete(bids)).toBe(true);
+    });
+});
+
+describe('doesPlayedCardDeclareMarriage', () => {
+    test('can declare marriage under normal conditions', () => {
+        const currentTrick = [] as ITrickCard[];
+        const hand = new Hand([
+            new Card(CardValue.KING, Suit.DIAMONDS),
+            new Card(CardValue.QUEEN, Suit.DIAMONDS),
+        ]);
+        expect(doesPlayedCardDeclareMarriage(hand, 0, currentTrick, 1)).toBe(true);
+    });
+
+
+    test('cannot declare marriage on second card in trick', () => {
+        const currentTrick = [
+            {
+                player: 'a',
+                card: {
+                    value: CardValue.ACE,
+                    suit: Suit.SPADES,
+                }
+            }
+        ] as ITrickCard[];
+        const hand = new Hand([
+            new Card(CardValue.KING, Suit.DIAMONDS),
+            new Card(CardValue.QUEEN, Suit.DIAMONDS),
+        ]);
+        expect(doesPlayedCardDeclareMarriage(hand, 0, currentTrick, 1)).toBe(false);
+    });
+
+    test('cannot declare marriage on first turn', () => {
+        const currentTrick = [] as ITrickCard[];
+        const hand = new Hand([
+            new Card(CardValue.KING, Suit.DIAMONDS),
+            new Card(CardValue.QUEEN, Suit.DIAMONDS),
+        ]);
+        expect(doesPlayedCardDeclareMarriage(hand, 0, currentTrick, 0)).toBe(false);
     });
 });
 

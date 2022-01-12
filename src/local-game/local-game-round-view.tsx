@@ -2,11 +2,11 @@ import React, { PureComponent } from "react";
 import "../card.css";
 import { Card, Deck, Hand, Suit } from "../cards";
 import { DistributeCardsView } from "./distribute-cards-view";
-import { Bid, GamePhase, getWinningCard, ITrickCard } from "../game-mechanics";
+import { Bid, GamePhase, getWinningCard, ITrickCard, doesPlayedCardDeclareMarriage } from "../game-mechanics";
 import { RoundScoringView } from "../local-components/round-scoring-view";
 import { BiddingView } from "./bidding-view";
 import { RevealTreasureView } from "./reveal-treasure-view";
-import { doesPlayedCardDeclareMarriage, TrickTakingView } from "./trick-taking-view";
+import { TrickTakingView } from "./trick-taking-view";
 import { TableView } from "./table-view";
 
 interface ITestRoundProps {

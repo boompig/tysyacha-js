@@ -183,6 +183,33 @@ export function canPlayCard(hand: Hand, trick: ITrickCard[], card: Card): boolea
 }
 
 /**
+ * NOTE: the hand *must* include the played card (obviously)
+ * Otherwise we get nonsense
+ * @param hand Hand *before* this card is played (includes this card)
+ * @param cardIndex Index into hand.cards
+ * @param currentTrick The current trick *excluding* the current card
+ * @param numPastTricks The number of tricks that have already been taken (by all players, total)
+ */
+export function doesPlayedCardDeclareMarriage (hand: Hand, cardIndex: number, currentTrick: ITrickCard[], numPastTricks: number) {
+    if (cardIndex < 0 || cardIndex >= hand.cards.length) {
+        throw new Error(`cardIndex is invalid - ${cardIndex}`);
+    }
+
+    if (currentTrick.length !== 0 || numPastTricks === 0) {
+        return false;
+    }
+
+    const card = hand.cards[cardIndex];
+
+    // check to see if they have the other card
+    if ((card.value === CardValue.KING || card.value === CardValue.QUEEN) && hand.marriages.includes(card.suit)) {
+        // console.log(`[trick ${this.state.trickNumber}] ${playerName} declared a ${card.suit} marriage`);
+        return true;
+    }
+    return false;
+}
+
+/**
  * Compute the winning bid from the bid history
  * If all people pass, return null
  * @param {Bid[]} bidHistory

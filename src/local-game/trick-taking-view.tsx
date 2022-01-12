@@ -1,7 +1,7 @@
 import React, { FC, useState } from "react";
 import { Hand, Suit, CardValue } from "../cards";
 import { PlayerView } from "../local-components/player-view";
-import { GamePhase, ITrickCard, getWinningCard } from "../game-mechanics";
+import { GamePhase, ITrickCard, getWinningCard, doesPlayedCardDeclareMarriage } from "../game-mechanics";
 import { CardView } from "../local-components/card-view";
 import AI from "./ai";
 import { TableView } from "./table-view";
@@ -39,31 +39,6 @@ interface IProps {
       */
     onDimissTrick(): void;
 };
-
-/**
- * NOTE: the hand *must* include the played card (obviously)
- * Otherwise we get nonsense
- * @param hand Hand *before* this card is played (includes this card)
- * @param cardIndex Index into hand.cards
- * @param currentTrick The current trick *excluding* the current card
- * @param numPastTricks The number of tricks that have already been taken (by all players, total)
- */
-function doesPlayedCardDeclareMarriage (hand: Hand, cardIndex: number, currentTrick: ITrickCard[], numPastTricks: number) {
-    if (cardIndex < 0 || cardIndex >= hand.cards.length) {
-        throw new Error(`cardIndex is invalid - ${cardIndex}`);
-    }
-    const card = hand.cards[cardIndex];
-
-    if (currentTrick.length === 0 && (card.value === CardValue.KING || card.value === CardValue.QUEEN) &&
-        numPastTricks > 0) {
-        // check to see if they have the other card
-        if (hand.marriages.includes(card.suit)) {
-            // console.log(`[trick ${this.state.trickNumber}] ${playerName} declared a ${card.suit} marriage`);
-            return true;
-        }
-    }
-    return false;
-}
 
 const TrickTakingView: FC<IProps> = (props: IProps) => {
     let [isInstructionsShown, setInstructionsShown] = useState(true);
