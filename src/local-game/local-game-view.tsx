@@ -227,8 +227,9 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
                 scores: savedGameState.scores,
                 numFailedDeals: savedGameState.numFailedDeals,
                 isIntroDialogShown: savedGameState.isIntroDialogShown || false,
-            });
-            this.setState({
+                isGameOver: savedGameState.isGameOver || false,
+                winningPlayers: savedGameState.winningPlayers || [],
+                // now that everything is loaded, the game is ready
                 isGameReady: true,
             });
             return true;

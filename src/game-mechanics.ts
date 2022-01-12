@@ -470,6 +470,16 @@ export function updateScores(scoreHistory: { [key: string]: number[] }, newRound
     return newScores;
 }
 
+export function getIsGameOver(scoreHistory: {[key: string]: number[]}): boolean {
+    const latestScores = getLatestScores(scoreHistory);
+    for (let score of Object.values(latestScores)) {
+        if (score >= 1000) {
+            return true;
+        }
+    }
+    return false;
+}
+
 export type TCards = {[key: string]: Hand};
 
 export interface IDeal {

@@ -2,7 +2,8 @@
  * This view shows the *overall* scores of the players
  */
 
-import React, { useState, FC } from 'react';
+import React, { FC } from 'react';
+import { getIsGameOver } from '../game-mechanics';
 
 interface IScoreViewProps {
     // map from user to score
@@ -26,6 +27,8 @@ interface IScoreViewProps {
  * Shows the scores for all players across all rounds of the game
  */
 const ScoreView : FC<IScoreViewProps> = (props: IScoreViewProps) => {
+    const isGameOver = getIsGameOver(props.scores);
+
     const headerPlayerNames = props.playerNames.map((name: string) => {
         return <th key={`header-row-${name}`}>{ name }</th>;
     });
@@ -40,8 +43,13 @@ const ScoreView : FC<IScoreViewProps> = (props: IScoreViewProps) => {
         });
         const classes : string[] = [];
         if (props.currentRound - 1 === round) {
-            // select the round before the current round
-            classes.push('table-primary');
+            // special case - game is over
+            if (isGameOver) {
+                classes.push('table-success')
+            } else {
+                // select the round before the current round
+                classes.push('table-primary');
+            }
         }
         return (<tr key={`score-row-${round}`} className={classes.join(' ')}>
             <td>{ round || 'start' }</td>
