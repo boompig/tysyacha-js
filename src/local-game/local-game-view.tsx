@@ -62,6 +62,8 @@ interface ILocalGameProps {
      * This component may not work properly if you change the name of the player halfway through the game
      */
     playerName: string;
+
+    onNewRoute(newHash: string): void;
 }
 
 /**
@@ -368,14 +370,6 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
         });
     }
 
-    handleChangeHash(newHash: string) {
-        const url = new URL(window.location.href);
-        url.hash = newHash;
-        console.debug(`[local game view] Hash is now ${newHash}`);
-        window.location.href = url.toString();
-        window.location.reload();
-    }
-
     render(): JSX.Element {
         let mainView = null;
 
@@ -408,8 +402,7 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
         return (<div className="wrapper">
             <header>
                 <Navbar gameId={this.props.gameId}
-                    hash={window.location.hash}
-                    setNavHash={this.handleChangeHash} />
+                    setNavHash={this.props.onNewRoute} />
             </header>
             <main className="container">
                 <div className="main-control-panel">

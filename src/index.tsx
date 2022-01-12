@@ -9,6 +9,18 @@ import { Navbar } from './local-game/navbar';
 import { RulesView } from './local-game/rules-view';
 // import { register } from "./serviceWorkerRegister";
 
+function handleNewRoute(newHash: string) {
+    if (newHash === '') {
+        newHash = '#landing';
+    }
+    const url = new URL(window.location.href);
+    url.hash = newHash;
+    // navigate to that URL
+    window.location.href = url.toString();
+    console.debug(`[index] hash is now ${newHash}`);
+    window.location.reload();
+}
+
 console.debug(`hash: ${window.location.hash}`);
 
 switch (window.location.hash) {
@@ -19,7 +31,8 @@ switch (window.location.hash) {
 
         ReactDOM.render(
             <React.StrictMode>
-                <LandingView />
+                <LandingView
+                    onNewRoute={ handleNewRoute }/>
             </React.StrictMode>,
             document.getElementById('root')
         );
@@ -41,7 +54,7 @@ switch (window.location.hash) {
                 <div className="wrapper">
                     <header>
                         <Navbar gameId={gameId}
-                            hash={window.location.hash} />
+                            setNavHash={handleNewRoute} />
                     </header>
                     <main className="container">
                         <RulesView />
@@ -70,7 +83,8 @@ switch (window.location.hash) {
             <React.StrictMode>
                 <LocalGameView
                     gameId={gameId}
-                    playerName={playerName}/>
+                    playerName={playerName}
+                    onNewRoute={handleNewRoute} />
             </React.StrictMode>,
             document.getElementById('root')
         );

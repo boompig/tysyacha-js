@@ -8,11 +8,6 @@ interface IProps {
     gameId?: string | null;
 
     /**
-     * Current nav hash
-     */
-    hash: string;
-
-    /**
      * Optionally provide a handler for what to do on a new hash
      * Overrides the default handler (which just sets the nav hash and refreshes the page)
      */
@@ -20,6 +15,8 @@ interface IProps {
 };
 
 const Navbar: FC<IProps> = (props: IProps) => {
+    const navHash = window.location.hash;
+
     function defaultChangeNavHash(newHash: string) {
         console.debug('Using default hash handler in navbar');
         const url = new URL(window.location.href);
@@ -30,6 +27,8 @@ const Navbar: FC<IProps> = (props: IProps) => {
     }
 
     function handleClick(e: React.SyntheticEvent<HTMLAnchorElement>) {
+        e.preventDefault();
+
         const url = new URL((e.target as HTMLAnchorElement).href);
         const hash = url.hash;
         if (props.setNavHash) {
@@ -54,12 +53,12 @@ const Navbar: FC<IProps> = (props: IProps) => {
                 {/* if there is no game ID specified, cannot navigate to the game */}
                 { props.gameId ?
                     <li className="nav-item">
-                        <a className={ props.hash === '#local-ai-game' ? "nav-link active" : "nav-link" } href="#local-ai-game" onClick={handleClick}>Game</a>
+                        <a className={ navHash === '#local-ai-game' ? "nav-link active" : "nav-link" } href="#local-ai-game" onClick={handleClick}>Game</a>
                     </li> :
                     null }
                 {/* if there is no game ID specified, cannot show the score card - what game are we showing? */}
                 <li className="nav-item">
-                    <a className={ props.hash === '#rules' ? "nav-link active" : "nav-link" } href="#rules" onClick={handleClick}>Rules</a>
+                    <a className={ navHash === '#rules' ? "nav-link active" : "nav-link" } href="#rules" onClick={handleClick}>Rules</a>
                 </li>
             </ul>
         </div>

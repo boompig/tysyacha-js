@@ -83,7 +83,9 @@ const ExistingGamesView : FC <IExistingGamesViewProps> = (props: IExistingGamesV
     </div>;
 };
 
-interface ILandingViewProps {};
+interface ILandingViewProps {
+    onNewRoute(newHash: string): void;
+};
 
 /**
  * Land on this page when you go to the index
@@ -129,15 +131,6 @@ const LandingView : FC <ILandingViewProps> = (props: ILandingViewProps) => {
         window.location.href = url.toString();
     }
 
-    function handleChangeHash(newHash: string) {
-        const url = new URL(window.location.href);
-        url.hash = newHash;
-        // navigate to that URL
-        window.location.href = url.toString();
-        console.debug(`[landing] hash is now ${newHash}`);
-        window.location.reload();
-    }
-
     /**
      * Callback for when we want to join an existing game
      */
@@ -167,8 +160,7 @@ const LandingView : FC <ILandingViewProps> = (props: ILandingViewProps) => {
 
     return (<div className="wrapper landing-view">
         <Navbar
-            hash={window.location.hash}
-            setNavHash={handleChangeHash} />
+            setNavHash={props.onNewRoute} />
         <div className="hero">
             {/* <div className="lang-select-container"> */}
                 {/* <div className="lang-select-option" role="button" onClick={ () => changeLang('ru') }>

@@ -38,6 +38,10 @@ main {
     margin: 0 auto;
 }
 
+.landing-view main {
+    padding-bottom: 1rem;
+}
+
 main .join-existing-games-container,
 .instructions {
     font-size: 1.1rem;
@@ -72,11 +76,12 @@ form button {
     cursor: pointer;
 }
 
-footer {
+.landing-view footer {
     font-size: .9rem;
     color: #bbb;
     text-align: center;
     width: 99%;
-    position: absolute;
-    bottom: 1vh;
+    /* position: absolute; */
+    /* bottom: 1vh; */
+    padding-bottom: .5rem;
 }
