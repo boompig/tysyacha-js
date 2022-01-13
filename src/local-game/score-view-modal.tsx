@@ -27,7 +27,8 @@ interface IScoreViewProps {
  * Shows the scores for all players across all rounds of the game
  */
 const ScoreView : FC<IScoreViewProps> = (props: IScoreViewProps) => {
-    const isGameOver = getIsGameOver(props.scores);
+    // note that we don't usually have scores for the current round
+    const isGameOver = getIsGameOver(props.scores, props.currentRound - 1);
 
     const headerPlayerNames = props.playerNames.map((name: string) => {
         return <th key={`header-row-${name}`}>{ name }</th>;

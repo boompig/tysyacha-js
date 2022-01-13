@@ -358,11 +358,15 @@ export function computeRoundScores(
 
 /**
  * Given the history of the scores, return a map from the player names to their current scores
+ * @param round - The round for which to get the scores
  */
-export function getLatestScores(scoreHistory: {[key: string]: number[]}): {[key: string]: number} {
+export function getLatestScores(scoreHistory: {[key: string]: number[]}, round: number): {[key: string]: number} {
     const scores = {} as {[key: string]: number};
     for (let [playerName, playerScores] of Object.entries(scoreHistory)) {
-        scores[playerName] = playerScores[playerScores.length - 1];
+        if (isNaN(playerScores[round])) {
+            throw new Error(`round ${round} scores not set in scoreHistory`);
+        }
+        scores[playerName] = playerScores[round];
     }
     return scores;
 }
@@ -383,14 +387,15 @@ export function getBarrelPlayers(scores: {[key: string]: number}): string[] {
 /**
  * Return the number of turns that a player has been on the barrel (not including any unscored turns)
  * -1 means the player is not on the barrel
+ * @param round - The latest round to count in scoreHistory.
  */
-export function getBarrelTurnCounts(scoreHistory: {[key: string]: number[]}): {[key: string]: number} {
+export function getBarrelTurnCounts(scoreHistory: {[key: string]: number[]}, round: number): {[key: string]: number} {
     const barrelTurnCounts = {} as {[key: string]: number};
 
     Object.entries(scoreHistory).forEach(([playerName, playerScores]) => {
         let count = -1;
         // start with most recent turn
-        let i = playerScores.length - 1;
+        let i = round;
 
         while ((playerScores[i] >= 880 && playerScores[i] < 1000) && i >= 0) {
             // the player was on the barrel on turn i
@@ -419,12 +424,13 @@ export function getRoundsComplete(scoreHistory: {[key: string]: number[]}): numb
  * @param scoreHistory - includes history of scores not including this most recent turn. Each entry is cumulative.
  * This method is guaranteed to *not* modify scoreHistory
  *
+ * @param round - The latest round to count in scoreHistory
  * @returns The scores for the latest round we are computing. Up to the caller to insert this correctly into the score history
  */
-export function updateScores(scoreHistory: { [key: string]: number[] }, newRoundScores: { [key: string]: number }): { [key: string]: number } {
+export function updateScores(scoreHistory: { [key: string]: number[] }, newRoundScores: { [key: string]: number }, round: number): { [key: string]: number } {
     const newScores = {} as {[key: string]: number};
-    const lastRoundScores = getLatestScores(scoreHistory);
-    const barrelTurnCounts = getBarrelTurnCounts(scoreHistory);
+    const lastRoundScores = getLatestScores(scoreHistory, round);
+    const barrelTurnCounts = getBarrelTurnCounts(scoreHistory, round);
 
     for (let player of Object.keys(newRoundScores)) {
         // tentatively compute the player's new score
@@ -470,8 +476,11 @@ export function updateScores(scoreHistory: { [key: string]: number[] }, newRound
     return newScores;
 }
 
-export function getIsGameOver(scoreHistory: {[key: string]: number[]}): boolean {
-    const latestScores = getLatestScores(scoreHistory);
+/**
+ * @param round - The latest round to count in scoreHistory
+ */
+export function getIsGameOver(scoreHistory: {[key: string]: number[]}, round: number): boolean {
+    const latestScores = getLatestScores(scoreHistory, round);
     for (let score of Object.values(latestScores)) {
         if (score >= 1000) {
             return true;

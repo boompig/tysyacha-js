@@ -540,7 +540,7 @@ describe('updateScores', () => {
             'b': 20,
             'c': 30,
         };
-        const newScores = updateScores(scoreHistory, newRoundScores)
+        const newScores = updateScores(scoreHistory, newRoundScores, 1);
         expect(newScores['a']).toBe(110);
         expect(newScores['b']).toBe(170);
         expect(newScores['c']).toBe(230);
@@ -557,7 +557,7 @@ describe('updateScores', () => {
             'b': 20,
             'c': 30,
         };
-        const newScores = updateScores(scoreHistory, newRoundScores)
+        const newScores = updateScores(scoreHistory, newRoundScores, 4);
         expect(newScores['a']).toBe(760);
         expect(newScores['b']).toBe(270);
         expect(newScores['c']).toBe(250);
@@ -576,7 +576,7 @@ describe('updateScores', () => {
             'b': 130,
             'c': 30,
         };
-        const newScores = updateScores(scoreHistory, newRoundScores)
+        const newScores = updateScores(scoreHistory, newRoundScores, 1);
         expect(newScores['a']).toBe(1000);
         expect(newScores['b']).toBe(1000);
         expect(newScores['c']).toBe(230);
@@ -594,7 +594,7 @@ describe('updateScores', () => {
             'b': 20,
             'c': 30,
         };
-        const newScores = updateScores(scoreHistory, newRoundScores)
+        const newScores = updateScores(scoreHistory, newRoundScores, 3);
         expect(newScores['a']).toBe(1000);
         expect(newScores['b']).toBe(220);
         expect(newScores['c']).toBe(230);
@@ -611,7 +611,7 @@ describe('updateScores', () => {
             'b': 50,
             'c': 20,
         };
-        const newScores = updateScores(scoreHistory, newRoundScores)
+        const newScores = updateScores(scoreHistory, newRoundScores, 1);
         expect(newScores['a']).toBe(880);
         expect(newScores['b']).toBe(880);
         expect(newScores['c']).toBe(320);
@@ -634,13 +634,30 @@ describe('updateScores', () => {
             // major penalty
             'c': -140,
         };
-        const newScores = updateScores(scoreHistory, newRoundScores)
+        const newScores = updateScores(scoreHistory, newRoundScores, 3);
         // should receive -120
         expect(newScores['a']).toBe(760);
         // should receive -50
         expect(newScores['b']).toBe(830);
         // should receive -140
         expect(newScores['c']).toBe(740);
+    });
+
+    test('updateScores should ignore all scores after specified round', () => {
+        const scoreHistory = {
+            'a': [0, 100, 200, 300, 400],
+            'b': [0, 10, 20, 30, 40],
+            'c': [0, 5, 10, 15, 20],
+        };
+        const newRoundScores = {
+            'a': 40,
+            'b': 40,
+            'c': 40,
+        };
+        const newScores = updateScores(scoreHistory, newRoundScores, 2);
+        expect(newScores['a']).toBe(240);
+        expect(newScores['b']).toBe(60);
+        expect(newScores['c']).toBe(50);
     });
 });
 

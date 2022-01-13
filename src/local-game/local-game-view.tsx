@@ -309,7 +309,9 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
                 }
             }
 
-            const newRoundScoresFinal = updateScores(newScoreHistory, roundScores);
+            // latest round to count in scoreHistory is this.state.round - 1 (the scores from this round should be overwritten)
+            const newRoundScoresFinal = updateScores(newScoreHistory, roundScores, this.state.round - 1);
+
             for (let player of this.state.playerNames) {
                 newScoreHistory[player][this.state.round] = newRoundScoresFinal[player];
             }
@@ -367,7 +369,7 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
                 }
             }
 
-            const newRoundScoresFinal = updateScores(newScoreHistory, roundScores);
+            const newRoundScoresFinal = updateScores(newScoreHistory, roundScores, this.state.round - 1);
             for (let player of this.state.playerNames) {
                 newScoreHistory[player][this.state.round] = newRoundScoresFinal[player];
             }
