@@ -6,6 +6,7 @@ import { GamePhase, updateScores } from "../game-mechanics";
 import { Navbar } from "./navbar";
 import { LoadingView } from "./loading-view";
 import { randInt } from "../utils";
+import GameOverView from "./game-over-view";
 
 /**
  * This function generates the player names given the human player's name
@@ -414,15 +415,8 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
                 localPlayerIndex={this.state.localPlayerIndex}
                 onChangePhase={this.handleChangePhase} />;
         } else if (this.state.isGameOver) {
-            mainView = (<div>
-                <h3>Game Over!</h3>
-                <p>The game is over.</p>
-
-                <p>
-                    {this.state.winningPlayers.length === 1 ? `The winner is ${this.state.winningPlayers[0]}.` :
-                        `The winning players are ${this.state.winningPlayers.join(', ')}.`}
-                </p>
-            </div>);
+            mainView = <GameOverView winningPlayers={this.state.winningPlayers}
+                onBack={() => this.props.onNewRoute('#landing')} />;
         } else {
             mainView = <LoadingView />
         }
