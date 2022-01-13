@@ -168,7 +168,7 @@ export function getWinningCard(cards: ITrickCard[], trumpSuit: null | Suit): ITr
  * Return true iff the player can play the given card from their hand given the trick
  * Assume the card is part of the hand
  */
-export function canPlayCard(hand: Hand, trick: ITrickCard[], card: Card): boolean {
+export function canPlayCard(hand: Hand, trick: ITrickCard[], card: Card, trumpSuit: Suit | null): boolean {
     if(trick.length === 0) {
         // they can play whatever card they want
         return true;
@@ -178,8 +178,16 @@ export function canPlayCard(hand: Hand, trick: ITrickCard[], card: Card): boolea
         // can always play in the same suit as the first card in the trick
         return true;
     }
-    // can play any other card so long as the player has no cards in the leading suit
-    return hand.cardsBySuit[leadingSuit].length === 0;
+
+    // if the player is not playing the leading card
+    // and they don't have the leading suit
+    // but they do have a trump card
+    if (hand.cardsBySuit[leadingSuit].length === 0 && trumpSuit && hand.cardsBySuit[trumpSuit].length > 0 && trick.length > 0) {
+        return card.suit === trumpSuit;
+    } else {
+        // can play any other card so long as the player has no cards in the leading suit
+        return hand.cardsBySuit[leadingSuit].length === 0;
+    }
 }
 
 /**

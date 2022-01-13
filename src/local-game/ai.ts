@@ -118,7 +118,7 @@ function getBid(biddingHistory: Bid[], hand: Hand, playerName: string): Bid {
  */
 function _playRandomCard(hand: Hand, currentTrick: ITrickCard[], trumpSuit: Suit | null) : number {
     const possibleCards = hand.cards.filter((card: Card) => {
-        return canPlayCard(hand, currentTrick, card);
+        return canPlayCard(hand, currentTrick, card, trumpSuit);
     });
 
     if (possibleCards.length === 0) {

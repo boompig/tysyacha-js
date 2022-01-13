@@ -330,6 +330,8 @@ export class LocalGameView extends PureComponent<ILocalGameProps, ILocalGameStat
             this.setState({
                 scores: newScoreHistory,
                 round: this.state.round + 1,
+                // important to update the phase here
+                phase: GamePhase.NOT_DEALT,
                 dealerIndex: (this.state.dealerIndex + 1) % 3,
                 numFailedDeals: 0,
                 winningPlayers: winningPlayers,

@@ -3,7 +3,7 @@
  */
 
 import { Card, CardValue, Hand, Suit } from '../cards';
-import { ITrickCard, getWinningCard, countTrickPoints, countAllTrickPoints, Bid, getWinningBid, isBiddingComplete, updateScores, doesPlayedCardDeclareMarriage } from '../game-mechanics';
+import { ITrickCard, getWinningCard, countTrickPoints, countAllTrickPoints, Bid, getWinningBid, isBiddingComplete, updateScores, doesPlayedCardDeclareMarriage, canPlayCard } from '../game-mechanics';
 
 
 /**
@@ -232,6 +232,68 @@ describe('isBiddingComplete', () => {
             },
         ] as Bid[];
         expect(isBiddingComplete(bids)).toBe(true);
+    });
+});
+
+/**
+ * Test playing phase logic
+ */
+describe('canPlayCard', () => {
+    test('must play leading suit if you have it when there is *no* trump suit', () => {
+        const hand = new Hand([
+            new Card(CardValue.NINE, Suit.HEARTS),
+            new Card(CardValue.NINE, Suit.SPADES),
+        ]);
+        const trick = [
+            {
+                player: 'a',
+                card: {
+                    value: CardValue.ACE,
+                    suit: Suit.HEARTS,
+                }
+            }
+        ] as ITrickCard[];
+
+        expect(canPlayCard(hand, trick, hand.cards[0], null)).toBe(true);
+        expect(canPlayCard(hand, trick, hand.cards[1], null)).toBe(false);
+    });
+
+    test('must play leading suit if you have it when there is a trump suit', () => {
+        const hand = new Hand([
+            new Card(CardValue.NINE, Suit.HEARTS),
+            new Card(CardValue.NINE, Suit.SPADES),
+        ]);
+        const trick = [
+            {
+                player: 'a',
+                card: {
+                    value: CardValue.ACE,
+                    suit: Suit.HEARTS,
+                }
+            }
+        ] as ITrickCard[];
+
+        expect(canPlayCard(hand, trick, hand.cards[0], Suit.SPADES)).toBe(true);
+        expect(canPlayCard(hand, trick, hand.cards[1], Suit.SPADES)).toBe(false);
+    });
+
+    test('must play trump suit if no cards of leading suit and have a trump', () => {
+        const hand = new Hand([
+            new Card(CardValue.NINE, Suit.DIAMONDS),
+            new Card(CardValue.NINE, Suit.SPADES),
+        ]);
+        const trick = [
+            {
+                player: 'a',
+                card: {
+                    value: CardValue.ACE,
+                    suit: Suit.HEARTS,
+                }
+            }
+        ] as ITrickCard[];
+
+        expect(canPlayCard(hand, trick, hand.cards[0], Suit.SPADES)).toBe(false);
+        expect(canPlayCard(hand, trick, hand.cards[1], Suit.SPADES)).toBe(true);
     });
 });
 
