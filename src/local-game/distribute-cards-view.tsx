@@ -49,7 +49,9 @@ const DistributeCardsViewHuman: FC<IDistributeCardsView> = (props: IDistributeCa
      */
     let [cardDist, setCardDist] = useState({} as {[key: string]: number});
 
-
+    /**
+     * Callback from child when player clicks on a card
+     */
     function handleSelectCard(playerIndex: number, cardIndex: number) {
         console.log(cardIndex);
         selectCard(cardIndex);
@@ -119,6 +121,8 @@ const DistributeCardsViewHuman: FC<IDistributeCardsView> = (props: IDistributeCa
                 isContractPlayer={props.localPlayerIndex === props.contractPlayerIndex}
                 isActivePlayer={props.localPlayerIndex === props.contractPlayerIndex}
                 showCards={true}
+                selectedCards={selectedCard === -1 ? [] : [selectedCard]}
+                assignedCards={Object.values(cardDist)}
                 onCardSelect={handleSelectCard} />
         </div>);
 

@@ -45,6 +45,12 @@ interface IPlayerViewProps {
     selectedCards?: number[];
 
     /**
+     * Indexes of the assigned cards relative to `hand.cards`
+     * This is used in the distribute-cards-view to highlight cards that have already been assigned to someone
+     */
+    assignedCards?: number[];
+
+    /**
      * What to do if the user clicks a card
      */
     onCardSelect?: (playerIndex: number, cardIndex: number) => void;
@@ -65,6 +71,10 @@ export const PlayerView : FC<IPlayerViewProps> = (props: IPlayerViewProps) => {
     getSuits().forEach((suit: Suit) => {
         props.hand.cardsBySuit[suit].forEach((card: Card) => {
             const i = props.hand.cards.indexOf(card);
+            const extraClasses = [];
+            if (props.assignedCards && props.assignedCards.includes(i)) {
+                extraClasses.push('card-assigned');
+            }
             let onClick = undefined;
             if(props.isActivePlayer && props.onCardSelect) {
                 onClick = (e: React.SyntheticEvent) => {return onSelectCard(i)};
@@ -73,6 +83,7 @@ export const PlayerView : FC<IPlayerViewProps> = (props: IPlayerViewProps) => {
                 value={card.value}
                 showBack={!props.showCards}
                 onClick={onClick}
+                classNames={extraClasses}
                 isSelected={props.selectedCards && props.selectedCards.includes(i)} />;
             cardViews.push(elem);
         });

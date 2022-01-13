@@ -152,7 +152,15 @@
     padding-top: 3rem;
 }
 
-.trick-taking-view .card-selected {
+.distribute-cards-view .card-assigned {
+    background-color: #cdc9c9;
+}
+
+
+/* card-selected should take priority over card-assigned */
+
+.trick-taking-view .card-selected,
+.distribute-cards-view .card-selected {
     background-color: yellow;
 }
 
