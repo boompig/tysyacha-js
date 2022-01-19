@@ -31,6 +31,7 @@ interface IProps {
 
     /**
      * Callback for when a card is played
+     * Expected to throw an error if the player cannot play that card
      */
     onPlayCard(trickCard: ITrickCard): void;
     /**
@@ -75,7 +76,11 @@ const TrickTakingView: FC<IProps> = (props: IProps) => {
             isMarriage: doesPlayedCardDeclareMarriage(activePlayerHand, selectedCard, props.currentTrick, props.numPastTricks),
         } as ITrickCard;
 
-        props.onPlayCard(trickCard);
+        try {
+            props.onPlayCard(trickCard);
+        } catch (err) {
+            alert(err);
+        }
 
         // de-select this card
         selectCard(-1);

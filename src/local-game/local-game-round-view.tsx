@@ -2,7 +2,7 @@ import React, { PureComponent } from "react";
 import "../card.css";
 import { Card, Deck, Hand, Suit } from "../cards";
 import { DistributeCardsView } from "./distribute-cards-view";
-import { Bid, GamePhase, getWinningCard, ITrickCard, doesPlayedCardDeclareMarriage, computeRoundScores } from "../game-mechanics";
+import { Bid, GamePhase, getWinningCard, ITrickCard, doesPlayedCardDeclareMarriage, computeRoundScores, canPlayCard } from "../game-mechanics";
 import { RoundScoringView } from "../local-components/round-scoring-view";
 import { BiddingView } from "./bidding-view";
 import { RevealTreasureView } from "./reveal-treasure-view";
@@ -248,7 +248,7 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
 
     /**
      * A given player plays the given card (on their turn)
-     * NOTE: no sanity checking here
+     * Throw an error if the player cannot play that card
      */
     handlePlayCard(trickCard: ITrickCard) {
         const playerIndex = this.props.playerNames.indexOf(trickCard.player);
@@ -267,9 +267,14 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
 
         const playerName = this.props.playerNames[playerIndex];
         const card = this.state.playerHands[playerName].cards[cardIndex];
+        const activePlayerHand = this.state.playerHands[playerName];
+
+        if (!canPlayCard(activePlayerHand, this.state.currentTrick, card, this.state.trumpSuit)) {
+            throw new Error(`Player ${playerName} cannot play the card ${card.toString()} right now`);
+        }
+
         console.log(`[trick ${this.state.trickNumber}] ${playerName} -> card ${card}`);
 
-        const activePlayerHand = this.state.playerHands[playerName];
         const isMarriage = doesPlayedCardDeclareMarriage(activePlayerHand, cardIndex, this.state.currentTrick, this.state.trickNumber);
         if (!isMarriage && trickCard.isMarriage) {
             throw new Error('player is telling us this is a marriage but we are not seeing it');
