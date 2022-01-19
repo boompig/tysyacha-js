@@ -13,17 +13,6 @@
     padding: .5rem 0 .5rem 0;
 }
 
-.table-view {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    justify-content: space-between;
-    margin: 0 auto;
-    max-width: 600px;
-    padding: 1rem 0;
-    font-size: 1.2rem;
-}
-
 .dealing-view .instructions {
     width: 600px;
     padding-top: 1rem;
@@ -40,27 +29,6 @@
 }
 
 @media screen and (min-width: 820px) {
-    .table-view {
-        min-height: 10rem;
-        max-width: 650px;
-        padding: 1rem;
-        border: 1px solid black;
-        border-radius: 5px;
-    }
-    .table-view .player-name {
-        font-size: 1.1rem;
-        padding-bottom: 0;
-    }
-    .table-view .player-name:first-of-type {
-        position: relative;
-        top: 6rem;
-        left: 0rem;
-    }
-    .table-view .player-name:last-of-type {
-        position: relative;
-        top: 6rem;
-        right: 4rem;
-    }
     .bidding-view .player-hand-container {
         position: absolute;
         bottom: 0;

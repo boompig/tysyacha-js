@@ -547,7 +547,11 @@ export class LocalGameRoundView extends PureComponent<ITestRoundProps, ILocalRou
                             <span>The last deal failed - 3 passes in a row.&nbsp;</span> :
                             null
                         }
-                        { this.props.playerNames[this.props.dealerIndex] } is dealing.
+                        {
+                            this.props.dealerIndex === this.props.localPlayerIndex ?
+                            'You are dealing' :
+                            `${this.props.playerNames[this.props.dealerIndex]} is dealing`
+                        }
                     </div>
                     <div className="action-container">
                         <button type="button" className="btn btn-success btn-lg"
