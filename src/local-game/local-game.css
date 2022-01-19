@@ -168,6 +168,7 @@
     position: absolute;
     bottom: 2rem;
     width: 90%;
+    max-width: 1300px;
 }
 
 .trick-taking-view form {

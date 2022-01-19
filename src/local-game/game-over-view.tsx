@@ -8,7 +8,7 @@ interface IProps {
     onBack(): void;
 };
 
-export const GameOverView = (props: IProps) => {
+export const GameOverView : FC<IProps> = (props: IProps) => {
     return (<div>
         <h3>Game Over!</h3>
         <p>The game is over.</p>
